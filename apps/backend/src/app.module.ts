@@ -1,6 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HealthModule } from './health/health.module';
+import { FinnhubModule } from './finnhub/finnhub.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { PinoLogger } from './common/logger/logger.service';
 
@@ -11,6 +12,7 @@ import { PinoLogger } from './common/logger/logger.service';
       envFilePath: ['.env', '.env.example'],
     }),
     HealthModule,
+    FinnhubModule,
   ],
   providers: [
     {

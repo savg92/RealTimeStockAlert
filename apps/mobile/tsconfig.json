@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2020",
+    "jsx": "react-native",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "rootDir": "./src",
+    "paths": {
+      "@/*": ["./*"],
+      "@shared/*": ["../../packages/shared/src/*"]
+    },
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "App.tsx"],
+  "exclude": ["node_modules", "dist", ".expo"]
+}
