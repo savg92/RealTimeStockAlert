@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 
 **Project Name**: Real-Time Stock Alert Application  
-**Target Audience**: Designli Technical Review Team  
+**Target Audience**: Technical Review Team  
 **Platform**: Android (React Native / Expo) & Backend API (Node.js / NestJS)  
 
 ## 1. Overview
@@ -21,6 +21,7 @@ A full-stack mobile application allowing users to track real-time stock prices, 
     *   Redis (Pub/Sub for real-time stock price distribution across sockets).
     *   Docker & Docker Compose (Containerization).
     *   Kubernetes (K8s manifests included for enterprise-level deployment - *Extra Points*).
+    *   **Package Manager**: Bun (primary), with npm/pnpm command references retained for compatibility notes.
 *   **External Services**: 
     *   Firebase Authentication (Client-side login).
     *   Firebase Cloud Messaging (FCM via Firebase Admin SDK for notifications).
@@ -59,6 +60,9 @@ A full-stack mobile application allowing users to track real-time stock prices, 
     *   *Frontend*: Unit tests (Jest + RNTL) for key components and state hooks.
 *   **Clean Architecture**: Separation of concerns in NestJS (Controllers, Services, Repositories).
 *   **Error Handling**: Global exception filters in NestJS; graceful UI fallbacks on mobile.
+*   **Reliability**: WebSocket reconnect/backoff, REST polling fallback, offline/reconnecting UI states, and idempotent alert/notification handling.
+*   **Observability**: Health/readiness endpoints, structured logging, request correlation IDs, and basic operational metrics.
+*   **Shared Contracts**: A shared TypeScript package for DTOs, enums, validation schemas, and cross-app constants to prevent backend/mobile drift.
 *   **Containerization**: `docker-compose.yml` to spin up Postgres, Redis, and optionally the NestJS server.
 *   **Documentation**: Detailed Setup/Review instructions for the technical team.
 
@@ -97,6 +101,8 @@ realtime-stock-alerts/
 ├── apps/
 │   ├── backend/            # NestJS API, WebSockets, Prisma
 │   └── mobile/             # Expo React Native App
+├── packages/
+│   └── shared/             # DTOs, enums, validation schemas, constants
 ├── k8s/                    # Kubernetes manifests
 ├── docker-compose.yml      # Local DB & Redis setup
 ├── README.md               

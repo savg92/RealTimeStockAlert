@@ -24,7 +24,11 @@ This is the high-level roadmap for the project. For execution details, refer to 
 
 ### [ ] Phase 4: Production Readiness
 - [ ] **Track: Deployment & Production Readiness** ([Plan](./conductor/tracks/production_readiness/plan.md))
-    - E2E Testing, K8s manifests, and final documentation.
+    - E2E Testing, K8s manifests, Swagger/OpenAPI docs, and final documentation upkeep.
+
+## Documentation Maintenance
+- [ ] Keep `README.md`, `docs/`, and conductor docs updated as the implementation evolves.
+- [ ] Maintain Swagger/OpenAPI documentation alongside backend routes and DTO changes.
 
 ## Current Status
 - **Active Track:** Project Foundation & Monorepo Setup
