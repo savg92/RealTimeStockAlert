@@ -1,0 +1,70 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: stock_alert_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-stock_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-stock_password}
+      POSTGRES_DB: ${DB_NAME:-stock_alert}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-stock_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stock_alert_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: stock_alert_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stock_alert_network
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./apps/backend/Dockerfile
+    container_name: stock_alert_backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${DB_USER:-stock_user}:${DB_PASSWORD:-stock_password}@postgres:5432/${DB_NAME:-stock_alert}
+      REDIS_URL: redis://redis:6379
+      PORT: ${BACKEND_PORT:-3000}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend:/app/apps/backend
+      - ./packages/shared:/app/packages/shared
+      - /app/node_modules
+    networks:
+      - stock_alert_network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  stock_alert_network:
+    driver: bridge
