@@ -74,8 +74,9 @@ Prerequisites
 Quickstart (development)
 
 1. Install dependencies at the repo root:
-
+```
    bun install
+```
 
 2. Set up environment variables (see docs/setup.md). Create a local .env with the required values, for example:
 
@@ -86,13 +87,16 @@ Quickstart (development)
 3. Start backend (example - adjust path if packages are different):
 
    # from repo root (adjust to actual backend package path)
+   ```
    cd packages/backend || cd backend
    bun run dev
+   ```
 
 4. Start mobile app (Expo):
-
+```
    cd ../packages/mobile || cd mobile
    expo start
+```
 
 Notes
 
