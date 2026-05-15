@@ -1,0 +1,5 @@
+# Ignore the conductor folder and AGENTS.md
+./conductor/*
+.conductor/*
+
+/AGENTS.md
