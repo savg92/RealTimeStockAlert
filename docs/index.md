@@ -8,6 +8,7 @@ Use this page as the entry point for all project documentation.
 - `PRD.md` — product requirements and scope
 - `plan.md` — top-level roadmap
 - `conductor/product.md` — conductor product summary
+- `conductor/tracks/` — detailed per-track plans (foundation_20260514, ingestion_distribution, mobile_core, visualization, price_alerts, push_notifications, production_readiness)
 - `conductor/tech-stack.md` — approved stack and constraints
 
 ## Architecture and setup

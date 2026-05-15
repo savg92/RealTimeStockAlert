@@ -10,6 +10,7 @@
 ## Expected environment variables
 
 ### Backend
+
 - `DATABASE_URL`
 - `REDIS_URL`
 - `PORT`
@@ -20,6 +21,7 @@
 - `FIREBASE_ADMIN_CREDENTIALS`
 
 ### Mobile
+
 - `EXPO_PUBLIC_API_URL`
 - `EXPO_PUBLIC_SOCKET_URL`
 - Firebase/Expo notification configuration values

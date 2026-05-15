@@ -63,6 +63,42 @@ Expected secrets and runtime configuration will be documented in `docs/setup.md`
 
 Bun is the primary package manager and workspace tool for this project.
 
+## Quickstart (local development)
+
+Prerequisites
+
+- Bun (https://bun.sh) installed and on PATH
+- PostgreSQL and Redis running locally or via containers
+- Firebase credentials for push notifications if testing alerts
+
+Quickstart (development)
+
+1. Install dependencies at the repo root:
+
+   bun install
+
+2. Set up environment variables (see docs/setup.md). Create a local .env with the required values, for example:
+
+   FINNHUB_API_KEY=your_key
+   DATABASE_URL=postgres://user:pass@localhost:5432/db
+   REDIS_URL=redis://localhost:6379
+
+3. Start backend (example - adjust path if packages are different):
+
+   # from repo root (adjust to actual backend package path)
+   cd packages/backend || cd backend
+   bun run dev
+
+4. Start mobile app (Expo):
+
+   cd ../packages/mobile || cd mobile
+   expo start
+
+Notes
+
+- See docs/setup.md for full environment and run commands (migrations, seeding, firebase setup).
+- Conductor tracks and plan outline the intended work order: see conductor/tracks/ and plan.md
+
 ## Contributing workflow
 
 Follow the conductor docs when implementing work:
