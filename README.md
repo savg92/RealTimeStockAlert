@@ -96,6 +96,7 @@ Quickstart (development)
 ```
    cd ../packages/mobile || cd mobile
    expo start
+```
 
 
 Notes
