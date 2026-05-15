@@ -1,5 +1,10 @@
+# .gitignore — repository defaults
 # Ignore the conductor folder and AGENTS.md
-./conductor/*
-.conductor/*
-
+# Ignore the full conductor directory at repository root
+/conductor/
+# Ignore AGENTS.md
 /AGENTS.md
+
+# Common OS/editor ignores (optional)
+# .DS_Store
+# .vscode/
