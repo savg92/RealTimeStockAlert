@@ -15,6 +15,7 @@ module.exports = {
   roots: ['<rootDir>/src/', '<rootDir>/test/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@shared/(.*)$': '<rootDir>/../../packages/shared/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
 };

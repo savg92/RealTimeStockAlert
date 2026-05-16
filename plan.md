@@ -4,16 +4,16 @@ This is the high-level roadmap for the project. For execution details, refer to 
 
 ## Roadmap Overview
 
-### [ ] Phase 1: Project Foundation & Infrastructure
-- [ ] **Track: Project Foundation & Monorepo Setup** ([Plan](./conductor/tracks/foundation_20260514/plan.md))
+### [x] Phase 1: Project Foundation & Infrastructure
+- [x] **Track: Project Foundation & Monorepo Setup** ([Plan](./conductor/tracks/foundation_20260514/plan.md))
     - Setup Monorepo, Docker, NestJS, and Prisma.
-- [ ] **Track: Real-Time Data Ingestion & Distribution** ([Plan](./conductor/tracks/ingestion_distribution/plan.md))
+- [x] **Track: Real-Time Data Ingestion & Distribution** ([Plan](./conductor/tracks/ingestion_distribution/plan.md))
     - Finnhub integration, Redis Pub/Sub, and Socket.io Gateway.
 
-### [ ] Phase 2: Mobile Core & Visualization
-- [ ] **Track: Mobile Core & Real-Time Dashboard** ([Plan](./conductor/tracks/mobile_core/plan.md))
+### [x] Phase 2: Mobile Core & Visualization
+- [x] **Track: Mobile Core & Real-Time Dashboard** ([Plan](./conductor/tracks/mobile_core/plan.md))
     - Expo setup, Socket.io client, and Live Dashboard.
-- [ ] **Track: Interactive Data Visualization** ([Plan](./conductor/tracks/visualization/plan.md))
+- [x] **Track: Interactive Data Visualization** ([Plan](./conductor/tracks/visualization/plan.md))
     - Detail screens and Live Price Charts.
 
 ### [ ] Phase 3: Advanced Features & Alerts
@@ -31,6 +31,6 @@ This is the high-level roadmap for the project. For execution details, refer to 
 - [ ] Maintain Swagger/OpenAPI documentation alongside backend routes and DTO changes.
 
 ## Current Status
-- **Active Track:** Project Foundation & Monorepo Setup
-- **Overall Progress:** 0/7 Tracks Completed
-- **Last Updated:** 2026-05-14
+- **Active Track:** Backend-Driven Push Notifications
+- **Overall Progress:** 4/7 Tracks Completed
+- **Last Updated:** 2026-05-15

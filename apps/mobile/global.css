@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @apply text-text;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary px-lg py-md rounded-lg text-white font-semibold;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary px-lg py-md rounded-lg text-white font-semibold;
+  }
+
+  .card {
+    @apply bg-background rounded-lg border border-border p-lg shadow-sm;
+  }
+
+  .input {
+    @apply w-full border border-border rounded-lg px-md py-sm text-base font-normal;
+  }
+}

@@ -7,10 +7,11 @@ WORKDIR /app
 RUN npm install -g bun
 
 # Copy root package files
-COPY package.json bun.lockb* ./
+COPY package.json bun.lock ./
 
 # Copy monorepo structure
 COPY apps/backend ./apps/backend
+COPY apps/mobile ./apps/mobile
 COPY packages ./packages
 COPY tsconfig.base.json ./
 

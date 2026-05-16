@@ -1,19 +1,127 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+
+// Import shared contracts
+import { version as sharedVersion } from '@stock-alert/shared';
+
+// Import screens
+import HomeScreen from './src/screens/HomeScreen';
+import WatchlistScreen from './src/screens/WatchlistScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import StockDetailScreen from './src/screens/StockDetailScreen';
+import { useAppStore } from './src/store/appStore';
+import { createExpoPushNotificationManager } from './src/services/expoPushNotifications';
+import { PushNotificationManager } from './src/services/pushNotifications';
+import AlertsListScreen from './src/screens/AlertsListScreen';
+
+export type RootStackParamList = {
+  Home: undefined;
+  Watchlist: undefined;
+  Alerts: undefined;
+  Settings: undefined;
+  StockDetail: {
+    symbol: string;
+    name?: string;
+  };
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
+  const notificationsEnabled = useAppStore((state) => state.settings.notifications);
+  const setError = useAppStore((state) => state.setError);
+  const notificationManagerRef = React.useRef<PushNotificationManager | null>(null);
+
+  React.useEffect(() => {
+    // Initialize app and hide splash screen
+    const initializeApp = async () => {
+      try {
+        // Perform initialization tasks here
+        void sharedVersion;
+        notificationManagerRef.current = createExpoPushNotificationManager();
+        await SplashScreen.hideAsync();
+      } catch (error) {
+        console.error('Failed to initialize app:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  React.useEffect(() => {
+    const manager = notificationManagerRef.current;
+    if (!manager) {
+      return;
+    }
+
+    const syncNotifications = async () => {
+      if (!notificationsEnabled) {
+        await manager.disable();
+        return;
+      }
+
+      const result = await manager.enable();
+      if (!result.synced && result.reason) {
+        setError(result.reason);
+        return;
+      }
+
+      setError(null);
+    };
+
+    syncNotifications().catch((error) => {
+      setError(error instanceof Error ? error.message : 'Failed to sync push notifications');
+    });
+
+    return () => {
+      manager.disable().catch((error) => {
+        console.error('Failed to disable notifications:', error);
+      });
+    };
+  }, [notificationsEnabled, setError]);
+
   return (
-    <View style={styles.container}>
-      <Text>Real-Time Stock Alert</Text>
-    </View>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: true,
+          }}
+        >
+          <Stack.Screen
+            name="Home"
+            component={HomeScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'Home'>>}
+            options={{ title: 'Real-Time Stock Alert' }}
+          />
+          <Stack.Screen
+            name="Watchlist"
+            component={WatchlistScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'Watchlist'>>}
+            options={{ title: 'My Watchlist' }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'Settings'>>}
+            options={{ title: 'Settings' }}
+          />
+          <Stack.Screen
+            name="Alerts"
+            component={AlertsListScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'Alerts'>>}
+            options={{ title: 'Price Alerts' }}
+          />
+          <Stack.Screen
+            name="StockDetail"
+            component={StockDetailScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'StockDetail'>>}
+            options={{ title: 'Stock Details' }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <StatusBar />
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

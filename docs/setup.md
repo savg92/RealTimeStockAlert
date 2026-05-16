@@ -24,7 +24,8 @@
 
 - `EXPO_PUBLIC_API_URL`
 - `EXPO_PUBLIC_SOCKET_URL`
-- Firebase/Expo notification configuration values
+- `EXPO_ANDROID_GOOGLE_SERVICES_FILE` (optional, defaults to `./google-services.json`)
+- Firebase/Expo notification configuration values (kept local, not committed)
 
 ## Development expectations
 

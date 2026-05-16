@@ -7,16 +7,17 @@
     "jsx": "react-native",
     "lib": ["ES2020", "DOM"],
     "outDir": "./dist",
-    "baseUrl": "./src",
-    "rootDir": "./src",
+    "baseUrl": ".",
+    "rootDir": ".",
     "paths": {
-      "@/*": ["./*"],
+      "@/*": ["./src/*"],
       "@shared/*": ["../../packages/shared/src/*"]
     },
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["jest", "react-native", "node"]
   },
   "include": ["src/**/*", "App.tsx"],
   "exclude": ["node_modules", "dist", ".expo"]

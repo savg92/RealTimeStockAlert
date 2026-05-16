@@ -1,5 +1,6 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PricePublisherService } from '../redis/price-publisher.service';
 
 export interface PriceUpdate {
   symbol: string;
@@ -26,7 +27,7 @@ export interface FinnhubMessage {
 }
 
 @Injectable()
-export class FinnhubService implements OnModuleInit, OnModuleDestroy {
+export class FinnhubService implements OnModuleDestroy {
   private logger = new Logger(FinnhubService.name);
   private ws: WebSocket | null = null;
   private wsConnected = false;
@@ -50,18 +51,12 @@ export class FinnhubService implements OnModuleInit, OnModuleDestroy {
   private readonly BASE_BACKOFF_MS = 1000; // 1 second
   private readonly MAX_BACKOFF_MS = 30000; // 30 seconds
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    @Optional() private readonly pricePublisher?: PricePublisherService,
+  ) {
     this.apiKey = this.configService.get<string>('FINNHUB_API_KEY') || '';
     this.wsUrl = this.configService.get<string>('FINNHUB_WS_URL') || 'wss://ws.finnhub.io';
-  }
-
-  async onModuleInit(): Promise<void> {
-    // Auto-connect on module initialization
-    try {
-      await this.connect();
-    } catch (error) {
-      this.logger.error('Failed to auto-connect on module init', error);
-    }
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -275,6 +270,10 @@ export class FinnhubService implements OnModuleInit, OnModuleDestroy {
   }
 
   private emitPriceUpdate(update: PriceUpdate): void {
+    void this.pricePublisher?.publishPriceUpdate(update).catch((error) => {
+      this.logger.error('Failed to publish price update to Redis', error as Error);
+    });
+
     for (const listener of this.priceListeners) {
       try {
         listener(update);

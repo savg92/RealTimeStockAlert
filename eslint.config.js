@@ -1,3 +1,5 @@
+import parser from '@typescript-eslint/parser';
+
 export default [
   {
     ignores: ['node_modules/', 'dist/', 'build/', '.next/', '.expo/'],
@@ -7,7 +9,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
-      parser: '@typescript-eslint/parser',
+      parser,
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
@@ -15,10 +17,9 @@ export default [
       },
     },
     plugins: {
-      '@typescript-eslint': await import('@typescript-eslint/eslint-plugin'),
+      '@typescript-eslint': (await import('@typescript-eslint/eslint-plugin')).default,
     },
     rules: {
-      '@typescript-eslint/explicit-function-return-types': 'warn',
       '@typescript-eslint/no-unused-vars': 'error',
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],

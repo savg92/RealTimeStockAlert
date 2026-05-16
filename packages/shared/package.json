@@ -20,7 +20,7 @@
     "dev": "tsc --watch",
     "build": "tsc",
     "test": "echo \"No tests yet\"",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

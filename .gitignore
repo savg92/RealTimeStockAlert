@@ -5,6 +5,8 @@
 # Ignore AGENTS.md
 /AGENTS.md
 
+/plan.md
+
 # Node modules and build outputs
 node_modules/
 dist/
@@ -18,6 +20,8 @@ tsconfig.tsbuildinfo
 .env
 .env.local
 .env.*.local
+apps/mobile/google-services.json
+apps/mobile/GoogleService-Info.plist
 
 # IDE and OS
 .DS_Store
