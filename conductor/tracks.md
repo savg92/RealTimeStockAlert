@@ -4,8 +4,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Mobile Core - [x] **Track: Mobile Core & Real-Time Dashboard** Real-Time Dashboard**
-  *Link: [./tracks/mobile_core/](./tracks/mobile_core/)*
 - [ ] **Track: Interactive Data Visualization**
   *Link: [./tracks/visualization/](./tracks/visualization/)*
 - [ ] **Track: Persistent Price Alerts**
