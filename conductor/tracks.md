@@ -4,8 +4,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Interactive Data Visualization**
-  *Link: [./tracks/visualization/](./tracks/visualization/)*
 - [ ] **Track: Persistent Price Alerts**
   *Link: [./tracks/price_alerts/](./tracks/price_alerts/)*
 - [ ] **Track: Backend-Driven Push Notifications**
