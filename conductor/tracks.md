@@ -4,7 +4,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Mobile Core & Real-Time Dashboard**
+- [~] **Track: Mobile Core - [x] **Track: Mobile Core & Real-Time Dashboard** Real-Time Dashboard**
   *Link: [./tracks/mobile_core/](./tracks/mobile_core/)*
 - [ ] **Track: Interactive Data Visualization**
   *Link: [./tracks/visualization/](./tracks/visualization/)*
