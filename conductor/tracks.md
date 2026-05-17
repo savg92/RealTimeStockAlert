@@ -4,7 +4,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Backend-Driven Push Notifications**
+- [x] **Track: Backend-Driven Push Notifications**
   *Link: [./tracks/push_notifications/](./tracks/push_notifications/)*
 - [ ] **Track: Deployment & Production Readiness**
   *Link: [./tracks/production_readiness/](./tracks/production_readiness/)*
