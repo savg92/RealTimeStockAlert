@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.git
+.github
+.DS_Store
+**/dist
+**/.expo
+**/.turbo
+**/.cache
+coverage
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

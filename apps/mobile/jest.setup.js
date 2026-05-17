@@ -7,17 +7,49 @@ jest.mock('expo-constants', () => ({
 
 jest.mock('nativewind', () => ({
   NativeWindStyleSheet: {
-    create: (styles) => styles,
+    create: (styles: any) => styles,
   },
 }));
 
 // Mock React Native modules
-jest.mock('react-native', () => ({
-  StyleSheet: {
-    create: (styles) => styles,
-  },
-  View: 'View',
-  Text: 'Text',
-  ScrollView: 'ScrollView',
-  FlatList: 'FlatList',
+jest.mock('react-native', () => {
+  const React = require('react');
+
+  // Simple string mocks for host components
+  return {
+    StyleSheet: {
+      create: (styles: any) => styles,
+      flatten: (styles: any) => styles,
+    },
+    Platform: {
+      OS: 'ios',
+      select: jest.fn((options) => options.ios || options.default),
+    },
+    View: 'View',
+    Text: 'Text',
+    ScrollView: 'ScrollView',
+    FlatList: 'FlatList',
+    TouchableOpacity: 'TouchableOpacity',
+    Pressable: 'Pressable',
+    TextInput: 'TextInput',
+    Image: 'Image',
+    SafeAreaView: 'SafeAreaView',
+    ActivityIndicator: 'ActivityIndicator',
+    KeyboardAvoidingView: 'KeyboardAvoidingView',
+    Modal: 'Modal',
+    Switch: 'Switch',
+    Dimensions: {
+      get: jest.fn().mockReturnValue({ width: 375, height: 812 }),
+    },
+  };
+});
+
+// Mock React Native Navigation
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({
+    navigate: jest.fn(),
+  }),
+  useRoute: () => ({
+    params: {},
+  }),
 }));

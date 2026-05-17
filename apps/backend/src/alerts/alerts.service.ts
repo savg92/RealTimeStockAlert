@@ -10,7 +10,7 @@ export class AlertsService {
     return this.prisma.alert.create({
       data: {
         userId,
-        symbol: input.symbol,
+        symbol: input.symbol.toUpperCase(),
         price: input.price,
         condition: input.condition,
         threshold: input.threshold,

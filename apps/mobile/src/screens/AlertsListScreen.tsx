@@ -6,13 +6,15 @@ import { useAppStore } from '../store/appStore';
 import type { AlertConfig } from '../types';
 import { createAlert, deleteAlert, fetchAlerts } from '../services/alertsApi';
 
-const getAuthToken = (): string | null => {
-  const token = process.env.EXPO_PUBLIC_AUTH_BEARER_TOKEN;
-  if (!token || !token.trim()) {
-    return null;
-  }
+export const authTokenResolver = {
+  getAuthToken: (): string | null => {
+    const token = process.env.EXPO_PUBLIC_AUTH_BEARER_TOKEN;
+    if (!token || !token.trim()) {
+      return null;
+    }
 
-  return token.trim();
+    return token.trim();
+  },
 };
 
 const buildOptimisticAlert = (
@@ -41,7 +43,7 @@ export default function AlertsListScreen() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const token = React.useMemo(() => getAuthToken(), []);
+  const token = React.useMemo(() => authTokenResolver.getAuthToken(), []);
 
   const loadAlerts = React.useCallback(async () => {
     if (!token) {

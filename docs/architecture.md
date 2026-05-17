@@ -1,57 +1,142 @@
-# Architecture Overview
+# Architecture
 
-## System shape
+## System Overview
 
-The application is a monorepo with three major layers:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          REAL-TIME STOCK ALERT SYSTEM                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────┐                    ┌──────────────────────────────┐  │
+│  │  FINNHUB (WS)    │──────────────────▶ │  BACKEND (NestJS + Socket)  │  │
+│  │  Market Prices   │                    │  - Ingestion                 │  │
+│  └──────────────────┘                    │  - Alert Pipeline            │  │
+│         │                                │  - Notification Service      │  │
+│         │ (REST fallback                 │  - Health/Readiness probes   │  │
+│         │  after 5 failures)             │  - Swagger/OpenAPI @ /docs   │  │
+│         │                                └────────────┬──────────────────┘  │
+│         │                                             │                     │
+│         └─────────────────┬──────────────────────────┼──────────────────┐   │
+│                           │                          │                  │   │
+│                      ┌────▼─────┐            ┌──────▼────────┐    ┌────▼──┐
+│                      │  Redis   │            │  PostgreSQL  │    │FCM    │
+│                      │(Pub/Sub) │            │  (Auth,      │    │ (Push)│
+│                      │          │            │   Alerts,    │    │       │
+│                      └────┬─────┘            │   Dispatch,  │    └───────┘
+│                           │                 │   Tokens)    │              │
+│                           │                 └──────────────┘              │
+│     ┌─────────────────────┘                                               │
+│     │                                                                     │
+│  ┌──▼──────────────────────────────────────┐                            │
+│  │   MOBILE (Expo React Native)            │                            │
+│  │ ┌──────────────────────────────────────┐│                            │
+│  │ │ • Watchlist Screen (live prices)     ││                            │
+│  │ │ • Alerts Screen (CRUD + updates)     ││                            │
+│  │ │ • Stock Detail + Chart               ││  ◀─────────────────────────┘
+│  │ │ • Settings (token sync)              ││                              
+│  │ │ • Socket.io client (subscribe/recv) ││                              
+│  │ │ • REST fallback (no socket)          ││                              
+│  │ └──────────────────────────────────────┘│                              
+│  └─────────────────────────────────────────┘                              
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-- **Mobile app**: Expo React Native client for watchlists, charts, alerts, and notifications
-- **Backend API**: NestJS service for auth, alerts, ingestion, and WebSocket distribution
-- **Shared contracts**: Common TypeScript DTOs, enums, and validation schemas used by both apps
+## Runtime Components
 
-## Core flow
+- **apps/backend**: NestJS API + Socket.io gateway + Finnhub ingestion + alert/notification pipeline
+- **apps/mobile**: Expo React Native client for watchlist, alerts, and push registration
+- **packages/shared**: Shared TypeScript contracts (`CreateAlertInput`, auth user types, shared validation)
 
-1. The backend connects to Finnhub and receives live price updates.
-2. Price updates are published through Redis Pub/Sub.
-3. The Socket.io gateway forwards live updates to connected mobile clients.
-4. The alert engine compares live prices against persisted alerts.
-5. Matching alerts are deactivated and FCM notifications are sent to the user.
+## Data and Messaging Flow
 
-## Reliability design
+1. **Finnhub Ingestion**: Backend connects to Finnhub WebSocket, receives market ticks, and normalizes them.
+2. **Redis Pub/Sub**: Normalized ticks published to Redis on `price-updates` channel (configurable).
+3. **Socket Broadcast**: Socket.io gateway broadcasts `price:update` events to symbol-specific rooms and global listeners.
+4. **Alert Evaluation**: Alert engine evaluates all active user alerts against price ticks, records `AlertDispatch` events.
+5. **Notification Dispatch**: Notification service sends FCM push notifications to registered user tokens, handles invalid tokens (cleanup).
 
-To keep the system resilient:
+## Reliability and Fallback Behavior
 
-- Finnhub connections should use reconnect/backoff and heartbeat detection
-- The mobile app should show online, reconnecting, and offline states
-- If live streaming fails, the client should fall back to cached or polled data
-- Alert evaluation should be idempotent to prevent duplicate notifications
-- FCM delivery should handle invalid tokens and retryable failures safely
+**Finnhub Ingestion Resilience:**
+- WebSocket connection includes heartbeat detection (ping/pong).
+- Exponential backoff reconnect strategy (1s → 2s → 4s → 8s → 16s, up to 5 attempts).
+- After 5 consecutive failures, backend automatically switches to REST fallback (5-second polling).
+- REST fallback covers subscribed symbols only (efficient).
+- Both modes (WS and REST) publish normalized ticks to Redis.
 
-## Observability
+**Mobile Socket Resilience:**
+- Socket.io client auto-reconnects with same exponential backoff strategy.
+- Mobile tracks connection state: `connected | reconnecting | offline`.
+- Preserves last known price state (`lastKnownState`) for UI stability during network loss.
+- Can invoke REST fallback fetch explicitly when socket is unavailable.
 
-The backend should expose:
+**Notification Degradation:**
+- No registered tokens for user → returns skipped result (no error).
+- Firebase Messaging unavailable/disabled → returns skipped result, no exceptions.
+- Invalid tokens (detected after send failure) are automatically cleaned from database.
 
-- `/health`
-- `/ready`
+**Alert Idempotency & Deduplication:**
+- Alerts use `isActive` flag transitions (prevents re-dispatch).
+- Every dispatch creates a persisted `AlertDispatch` record (audit trail).
+- No duplicate notifications sent even if price crosses threshold multiple times.
 
-It should also emit:
+## API and Transport Boundaries
 
-- structured logs
-- request correlation IDs
-- basic metrics for connection and alert activity
+**REST Endpoints (Bearer token required for `/alerts` and `/notifications`):**
+- `GET /health` — service health summary (no auth required)
+- `GET /ready` — service readiness (DB/cache/auth status, no auth required)
+- `POST /alerts` — create price alert
+- `GET /alerts` — list user's alerts
+- `DELETE /alerts/:id` — delete alert
+- `PUT /notifications/token` — sync/register push token
+- `DELETE /notifications/token/:token` — revoke push token
+- `POST /notifications/test` — send test notification
 
-## Monorepo layout
+**Swagger/OpenAPI:**
+- Live documentation at `/docs` (interactive, includes auth bearer input).
 
-Expected top-level structure:
+**WebSocket (Socket.io) Transport:**
+- `price:subscribe {symbol}` — client subscribes to symbol updates.
+- `price:unsubscribe {symbol}` — client unsubscribes.
+- `price:update {symbol, price, change}` — server broadcasts live price.
+- `connection-status {status: connected|reconnecting|offline}` — server notifies client of connection state.
 
-- `apps/backend`
-- `apps/mobile`
-- `packages/shared`
-- `k8s/`
-- `docker-compose.yml`
+## Observability and Monitoring
 
-## Data ownership
+**Health and Readiness:**
+- `GET /health`: returns `status: ok|degraded|error`, timestamp, uptime, environment.
+- `GET /ready`: returns `ready: true|false`, individual component checks (database, cache).
 
-- **PostgreSQL**: users, alerts, tokens, and persisted metadata
-- **Redis**: transient pub/sub event distribution
-- **Firebase**: identity and notification transport
-- **Finnhub**: live market data source
+**Structured Logging:**
+- Pino logger with JSON output (production-ready).
+- Context information: request ID, service name, correlation across logs.
+- Log levels: debug (dev), info (normal), warn (recoverable), error (critical).
+
+**Request Correlation:**
+- Request ID middleware assigns unique ID to every request.
+- Propagated through logs for traceability.
+
+## Storage and Data Ownership
+
+| Storage | Purpose | Notes |
+|---------|---------|-------|
+| **PostgreSQL** | Persistent state | Users (via Firebase Auth), Alerts (schema + isActive), AlertDispatch (audit trail), FcmTokens (device registration) |
+| **Redis** | Transient messaging | Price updates pub/sub channel; ephemeral, no persistence required |
+| **Firebase Admin** | Auth + Push | ID token verification (Bearer token validation), FCM device messaging |
+| **Finnhub** | Market data upstream | WebSocket for real-time prices (primary), REST fallback for reliability |
+
+## Security Considerations
+
+- **Authentication**: Firebase ID token validation on protected endpoints (via `AuthGuard`).
+- **Input Validation**: DTOs with type checking; Prisma ORM prevents SQL injection.
+- **CORS**: Socket.io configured for development; production should restrict origins.
+- **Secrets Management**: Environment variables (not hardcoded); Kubernetes `Secret` objects for production.
+- **Rate Limiting**: Not currently implemented; consider for production load.
+
+## Performance Tuning Notes
+
+- **Price Updates**: Redis pub/sub ensures loose coupling; Socket.io broadcasts are per-room (symbol-specific) for efficiency.
+- **Alert Evaluation**: Alert engine processes one tick at a time; linear scan of active alerts (optimize if > 10k alerts).
+- **Database Queries**: Indexed on user_id and symbol; `AlertDispatch` uses batch inserts for throughput.
+- **Mobile Re-renders**: React memo and selector hooks prevent unnecessary renders; Zustand store for state centralization.

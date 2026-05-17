@@ -33,6 +33,10 @@
   - [x] Document Bun commands, local fallback behavior, and operational troubleshooting notes
   - [x] Add Swagger/OpenAPI docs for backend endpoints and keep them synced with DTO changes
   - [x] Maintain a docs index and update documentation whenever behavior or setup changes
+  - [x] Enhance `docs/architecture.md` with detailed reliability, deployment, and security sections
+  - [x] Strengthen `docs/api.md` with comprehensive endpoint documentation, examples, and error handling
+  - [x] Improve `docs/index.md` with better navigation and quick-start guidance
+  - [x] Verify all documentation is cross-referenced and coherent
 - [ ] Task: Project Handoff Preparation
   - [ ] Record and prepare the 4-minute demonstration video
   - [ ] Compile the final Android `.apk`

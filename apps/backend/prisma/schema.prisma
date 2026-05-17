@@ -31,10 +31,32 @@ model Alert {
   updatedAt DateTime @updatedAt
   
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dispatch  AlertDispatch?
   
   @@unique([userId, symbol, condition, threshold])
   @@index([userId])
   @@index([symbol])
+}
+
+model AlertDispatch {
+  id              String   @id @default(cuid())
+  alertId         String   @unique
+  userId          String
+  symbol          String
+  triggerPrice    Float
+  triggerAt       DateTime
+  deliveryStatus  String   @default("pending")
+  attemptedCount  Int      @default(0)
+  sentCount       Int      @default(0)
+  failureReason   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([deliveryStatus])
 }
 
 model FcmToken {

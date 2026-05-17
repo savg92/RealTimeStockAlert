@@ -61,6 +61,9 @@ EXPO_PUBLIC_AUTH_BEARER_TOKEN=<firebase-id-token>
 ```
 
 `EXPO_PUBLIC_AUTH_BEARER_TOKEN` is optional but required to sync FCM device tokens with authenticated backend routes.
+If it is unset, the mobile app uses a local no-op sync client so Expo/dev builds still run without committed secrets.
+
+Set `EXPO_PUBLIC_ENABLE_NOTIFICATIONS=false` to fully disable notification sync during local development.
 
 If testing Android push notifications with Firebase, also provide `google-services.json`:
 
@@ -113,13 +116,30 @@ npm run web
 
 ## Building
 
-### Export for App Store/Play Store
+### Local export (bundle/static assets)
 
 ```bash
 bun run build
 # or
 npm run build
 ```
+
+### Final Android APK (EAS Build)
+
+From `apps/mobile`:
+
+```bash
+bunx --bun expo config --type public
+bunx --bun eas-cli --version
+bunx --bun eas-cli login
+bunx --bun eas-cli build --platform android --profile production --non-interactive
+```
+
+Notes:
+
+- `apps/mobile/eas.json` defines a `production` profile that outputs an APK.
+- Ensure Expo config resolves `slug` and `android.package` before running build.
+- Download the APK from the EAS build page once status is `finished`.
 
 ## Project Structure
 

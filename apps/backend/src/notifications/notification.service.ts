@@ -68,14 +68,7 @@ export class NotificationService {
     }
 
     const tokens = tokenRows.map((r) => r.token);
-    const response = await this.messaging.sendEachForMulticast({
-      tokens,
-      notification: {
-        title: payload.title,
-        body: payload.body,
-      },
-      data: payload.data,
-    });
+    const response = await this.sendWithRetry(tokens, payload);
 
     const invalidTokens: string[] = [];
     let sentCount = 0;
@@ -103,6 +96,29 @@ export class NotificationService {
       sentCount,
       skipped: false,
     };
+  }
+
+  private async sendWithRetry(tokens: string[], payload: NotificationPayload) {
+    const maxAttempts = 2;
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        return await this.messaging!.sendEachForMulticast({
+          tokens,
+          notification: {
+            title: payload.title,
+            body: payload.body,
+          },
+          data: payload.data,
+        });
+      } catch (error) {
+        lastError = error;
+        this.logger.warn(`Push notification attempt ${attempt} failed`);
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error('Failed to send push notifications');
   }
 
   private readMessagingErrorCode(error: unknown): string | null {

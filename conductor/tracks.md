@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Deployment & Production Readiness**
+- [~] **Track: Deployment - [ ] **Track: Deployment & Production Readiness** Production Readiness**
   *Link: [./tracks/production_readiness/](./tracks/production_readiness/)*

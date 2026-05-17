@@ -1,0 +1,323 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stock-alert
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stock-alert-backend-config
+  namespace: stock-alert
+data:
+  NODE_ENV: production
+  PORT: '3000'
+  LOG_LEVEL: info
+  REDIS_URL: redis://stock-alert-redis:6379
+  REDIS_PRICE_CHANNEL: price-updates
+  FINNHUB_WS_URL: wss://ws.finnhub.io
+  FIREBASE_ENABLE_MESSAGING: 'true'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: stock-alert-backend-secrets
+  namespace: stock-alert
+type: Opaque
+stringData:
+  DATABASE_URL: postgresql://stock_user:CHANGE_ME@stock-alert-postgres:5432/stock_alert
+  FINNHUB_API_KEY: CHANGE_ME
+  FIREBASE_PROJECT_ID: CHANGE_ME
+  FIREBASE_CLIENT_EMAIL: CHANGE_ME
+  FIREBASE_PRIVATE_KEY: CHANGE_ME
+  FIREBASE_ADMIN_CREDENTIALS: CHANGE_ME
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: stock-alert-postgres-secrets
+  namespace: stock-alert
+type: Opaque
+stringData:
+  POSTGRES_USER: stock_user
+  POSTGRES_PASSWORD: CHANGE_ME
+  POSTGRES_DB: stock_alert
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-alert-postgres
+  namespace: stock-alert
+spec:
+  clusterIP: None
+  selector:
+    app: stock-alert-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stock-alert-postgres
+  namespace: stock-alert
+spec:
+  serviceName: stock-alert-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stock-alert-postgres
+  template:
+    metadata:
+      labels:
+        app: stock-alert-postgres
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: stock-alert-postgres-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stock-alert-postgres-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: stock-alert-postgres-secrets
+                  key: POSTGRES_DB
+          startupProbe:
+            exec:
+              command: ['sh', '-c', 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ['sh', '-c', 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ['sh', '-c', 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: '1'
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-alert-redis
+  namespace: stock-alert
+spec:
+  clusterIP: None
+  selector:
+    app: stock-alert-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stock-alert-redis
+  namespace: stock-alert
+spec:
+  serviceName: stock-alert-redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stock-alert-redis
+  template:
+    metadata:
+      labels:
+        app: stock-alert-redis
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          args: ['redis-server', '--appendonly', 'yes', '--save', '60', '1000']
+          ports:
+            - name: redis
+              containerPort: 6379
+          startupProbe:
+            exec:
+              command: ['sh', '-c', 'redis-cli ping']
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ['sh', '-c', 'redis-cli ping']
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ['sh', '-c', 'redis-cli ping']
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-alert-backend
+  namespace: stock-alert
+spec:
+  type: ClusterIP
+  selector:
+    app: stock-alert-backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-alert-backend-lb
+  namespace: stock-alert
+spec:
+  type: LoadBalancer
+  selector:
+    app: stock-alert-backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-alert-backend
+  namespace: stock-alert
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: stock-alert-backend
+  template:
+    metadata:
+      labels:
+        app: stock-alert-backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: stock-alert/backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: stock-alert-backend-config
+            - secretRef:
+                name: stock-alert-backend-secrets
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: '1'
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-alert-backend
+  namespace: stock-alert
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '3600'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: stock-alert.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stock-alert-backend
+                port:
+                  number: 80

@@ -25,7 +25,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   readonly user: any;
   readonly alert: any;
+  readonly alertDispatch: any;
   readonly fcmToken: any;
+  readonly $transaction: any;
 
   constructor() {
     const databaseUrl = process.env.DATABASE_URL;
@@ -37,16 +39,21 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       this.client = new PrismaClient({
         adapter: new PrismaPg(pool),
       });
-      this.user = this.client.user;
-      this.alert = this.client.alert;
-      this.fcmToken = this.client.fcmToken;
+      const client = this.client as any;
+      this.user = client.user;
+      this.alert = client.alert;
+      this.alertDispatch = client.alertDispatch;
+      this.fcmToken = client.fcmToken;
+      this.$transaction = client.$transaction.bind(client);
       return;
     }
 
     this.client = null;
     this.user = createUnavailableModel('user');
     this.alert = createUnavailableModel('alert');
+    this.alertDispatch = createUnavailableModel('alertDispatch');
     this.fcmToken = createUnavailableModel('fcmToken');
+    this.$transaction = createUnavailableModel('$transaction');
   }
 
   async onModuleInit() {

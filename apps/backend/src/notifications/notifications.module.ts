@@ -3,6 +3,8 @@ import { getMessaging, type Messaging } from 'firebase-admin/messaging';
 import { AuthModule } from '../common/auth/auth.module';
 import { initializeFirebaseAdminApp } from '../common/firebase/firebase-admin-app';
 import { PrismaModule } from '../common/prisma/prisma.module';
+import { RedisModule } from '../redis/redis.module';
+import { AlertEngineService } from './alert-engine.service';
 import { NotificationService } from './notification.service';
 import { NotificationsController } from './notifications.controller';
 import { FIREBASE_ADMIN_MESSAGING } from './notifications.tokens';
@@ -25,8 +27,8 @@ const firebaseAdminMessagingProvider = {
 };
 
 @Module({
-  imports: [PrismaModule, AuthModule],
-  providers: [firebaseAdminMessagingProvider, NotificationService],
+  imports: [PrismaModule, AuthModule, RedisModule],
+  providers: [firebaseAdminMessagingProvider, NotificationService, AlertEngineService],
   controllers: [NotificationsController],
   exports: [NotificationService],
 })

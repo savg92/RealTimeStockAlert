@@ -5,32 +5,32 @@ This is the high-level roadmap for the project. For execution details, refer to 
 ## Roadmap Overview
 
 ### [x] Phase 1: Project Foundation & Infrastructure
-- [x] **Track: Project Foundation & Monorepo Setup** ([Plan](./conductor/tracks/foundation_20260514/plan.md))
+- [x] **Track: Project Foundation & Monorepo Setup** ([Plan](./conductor/archive/foundation_20260514/plan.md))
     - Setup Monorepo, Docker, NestJS, and Prisma.
-- [x] **Track: Real-Time Data Ingestion & Distribution** ([Plan](./conductor/tracks/ingestion_distribution/plan.md))
+- [x] **Track: Real-Time Data Ingestion & Distribution** ([Plan](./conductor/archive/ingestion_distribution/plan.md))
     - Finnhub integration, Redis Pub/Sub, and Socket.io Gateway.
 
 ### [x] Phase 2: Mobile Core & Visualization
-- [x] **Track: Mobile Core & Real-Time Dashboard** ([Plan](./conductor/tracks/mobile_core/plan.md))
+- [x] **Track: Mobile Core & Real-Time Dashboard** ([Plan](./conductor/archive/mobile_core/plan.md))
     - Expo setup, Socket.io client, and Live Dashboard.
-- [x] **Track: Interactive Data Visualization** ([Plan](./conductor/tracks/visualization/plan.md))
+- [x] **Track: Interactive Data Visualization** ([Plan](./conductor/archive/visualization/plan.md))
     - Detail screens and Live Price Charts.
 
-### [ ] Phase 3: Advanced Features & Alerts
-- [ ] **Track: Persistent Price Alerts** ([Plan](./conductor/tracks/price_alerts/plan.md))
+### [x] Phase 3: Advanced Features & Alerts
+- [x] **Track: Persistent Price Alerts** ([Plan](./conductor/archive/price_alerts/plan.md))
     - CRUD for alerts and Database persistence.
-- [ ] **Track: Backend-Driven Push Notifications** ([Plan](./conductor/tracks/push_notifications/plan.md))
+- [x] **Track: Backend-Driven Push Notifications** ([Plan](./conductor/archive/push_notifications/plan.md))
     - FCM integration and the reactive Alert Engine.
 
-### [ ] Phase 4: Production Readiness
-- [ ] **Track: Deployment & Production Readiness** ([Plan](./conductor/tracks/production_readiness/plan.md))
+### [] Phase 4: Production Readiness
+- [x] **Track: Deployment & Production Readiness** ([Plan](./conductor/tracks/production_readiness/plan.md))
     - E2E Testing, K8s manifests, Swagger/OpenAPI docs, and final documentation upkeep.
 
 ## Documentation Maintenance
-- [ ] Keep `README.md`, `docs/`, and conductor docs updated as the implementation evolves.
-- [ ] Maintain Swagger/OpenAPI documentation alongside backend routes and DTO changes.
+- [x] Keep `README.md`, `docs/`, and conductor docs updated as the implementation evolves.
+- [x] Maintain Swagger/OpenAPI documentation alongside backend routes and DTO changes.
 
 ## Current Status
-- **Active Track:** Backend-Driven Push Notifications
-- **Overall Progress:** 4/7 Tracks Completed
-- **Last Updated:** 2026-05-15
+- **Active Track:** Deployment & Production Readiness (Complete - Manual handoff only)
+- **Overall Progress:** 7/7 Tracks Completed
+- **Last Updated:** 2026-05-17

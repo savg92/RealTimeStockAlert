@@ -94,10 +94,19 @@ export class PushNotificationManager {
         return;
       }
 
-      this.currentToken = token;
-      this.backend.registerToken(token).catch((err) => {
-        console.error('Failed to sync refreshed FCM token', err);
-      });
+      const previousToken = this.currentToken;
+      this.backend
+        .registerToken(token)
+        .then(async () => {
+          this.currentToken = token;
+
+          if (previousToken && previousToken !== token) {
+            await this.backend.unregisterToken(previousToken);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to sync refreshed FCM token', err);
+        });
     });
   }
 
@@ -111,18 +120,30 @@ export class PushNotificationManager {
   }
 }
 
-const buildAuthHeaders = (): HeadersInit => {
-  const bearer = process.env.EXPO_PUBLIC_AUTH_BEARER_TOKEN?.trim();
+const readAuthBearer = (): string | undefined => {
+  return process.env['EXPO_PUBLIC_AUTH_BEARER_TOKEN']?.trim();
+};
+
+const buildAuthHeaders = (bearer?: string): HeadersInit => {
   return bearer ? { Authorization: `Bearer ${bearer}` } : {};
 };
 
-export const createNotificationBackendClient = (): PushNotificationBackend => {
+export const createNotificationBackendClient = (bearerToken = readAuthBearer()): PushNotificationBackend => {
+  const bearer = bearerToken?.trim();
+
+  if (!bearer) {
+    return {
+      registerToken: async () => {},
+      unregisterToken: async () => {},
+    };
+  }
+
   const send = async (path: string, method: 'PUT' | 'DELETE', payload?: object) => {
     const response = await fetch(`${API_CONFIG.BASE_URL}${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
-        ...buildAuthHeaders(),
+        ...buildAuthHeaders(bearer),
       },
       body: payload ? JSON.stringify(payload) : undefined,
     });

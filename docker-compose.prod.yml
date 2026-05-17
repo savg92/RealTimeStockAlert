@@ -3,17 +3,15 @@ version: '3.9'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: stock_alert_postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-stock_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-stock_password}
       POSTGRES_DB: ${DB_NAME:-stock_alert}
-    ports:
-      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-stock_user}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-stock_user} -d ${DB_NAME:-stock_alert}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,14 +20,12 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: stock_alert_redis
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
+    restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,27 +36,38 @@ services:
     build:
       context: .
       dockerfile: ./apps/backend/Dockerfile
-      target: dev
-    container_name: stock_alert_backend
+      target: prod
+    restart: unless-stopped
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
+      PORT: '3000'
       DATABASE_URL: postgresql://${DB_USER:-stock_user}:${DB_PASSWORD:-stock_password}@postgres:5432/${DB_NAME:-stock_alert}
       REDIS_URL: redis://redis:6379
-      PORT: ${BACKEND_PORT:-3000}
-    ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      FINNHUB_API_KEY: ${FINNHUB_API_KEY}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      FIREBASE_ADMIN_CREDENTIALS: ${FIREBASE_ADMIN_CREDENTIALS}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/backend:/app/apps/backend
-      - ./packages/shared:/app/packages/shared
-      - /app/node_modules
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'bun',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then((res)=>{if(!res.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    ports:
+      - '${BACKEND_PORT:-3000}:3000'
     networks:
       - stock_alert_network
-    command: bun run dev
 
 volumes:
   postgres_data:

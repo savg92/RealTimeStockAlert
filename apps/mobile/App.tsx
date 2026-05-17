@@ -1,7 +1,8 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 
@@ -17,6 +18,7 @@ import { useAppStore } from './src/store/appStore';
 import { createExpoPushNotificationManager } from './src/services/expoPushNotifications';
 import { PushNotificationManager } from './src/services/pushNotifications';
 import AlertsListScreen from './src/screens/AlertsListScreen';
+import { NotificationRouter } from './src/services/notificationRouting';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -37,6 +39,9 @@ export default function App() {
   const notificationsEnabled = useAppStore((state) => state.settings.notifications);
   const setError = useAppStore((state) => state.setError);
   const notificationManagerRef = React.useRef<PushNotificationManager | null>(null);
+  const navigationRef = React.useMemo(() => createNavigationContainerRef<RootStackParamList>(), []);
+  const notificationRouterRef = React.useRef(new NotificationRouter(navigationRef));
+  const notificationsFeatureEnabled = process.env.EXPO_PUBLIC_ENABLE_NOTIFICATIONS !== 'false';
 
   React.useEffect(() => {
     // Initialize app and hide splash screen
@@ -45,6 +50,13 @@ export default function App() {
         // Perform initialization tasks here
         void sharedVersion;
         notificationManagerRef.current = createExpoPushNotificationManager();
+        Notifications.setNotificationHandler({
+          handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: false,
+          }),
+        });
         await SplashScreen.hideAsync();
       } catch (error) {
         console.error('Failed to initialize app:', error);
@@ -61,7 +73,7 @@ export default function App() {
     }
 
     const syncNotifications = async () => {
-      if (!notificationsEnabled) {
+      if (!notificationsFeatureEnabled || !notificationsEnabled) {
         await manager.disable();
         return;
       }
@@ -84,11 +96,32 @@ export default function App() {
         console.error('Failed to disable notifications:', error);
       });
     };
-  }, [notificationsEnabled, setError]);
+  }, [notificationsEnabled, notificationsFeatureEnabled, setError]);
+
+  React.useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      notificationRouterRef.current.handleResponse(response);
+    });
+
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        notificationRouterRef.current.handleResponse(response);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer
+        ref={navigationRef}
+        onReady={() => {
+          notificationRouterRef.current.handleReady();
+        }}
+      >
         <Stack.Navigator
           screenOptions={{
             headerShown: true,

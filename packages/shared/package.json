@@ -18,8 +18,9 @@
   ],
   "scripts": {
     "dev": "tsc --watch",
-    "build": "tsc",
-    "test": "echo \"No tests yet\"",
+    "build": "rm -rf dist && tsc",
+    "test": "bun test test",
+    "test:cov": "bun test --coverage test",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit"
   },
