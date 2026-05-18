@@ -9,13 +9,13 @@ export const API_CONFIG = {
 
 export const API_ENDPOINTS = {
   // Stock endpoints
-  STOCKS: '/api/stocks',
-  STOCK_BY_SYMBOL: (symbol: string) => `/api/stocks/${symbol}`,
-  STOCK_PRICES: '/api/stocks/prices',
+  STOCKS: '/stocks',
+  STOCK_BY_SYMBOL: (symbol: string) => `/stocks/${symbol}`,
+  STOCK_PRICES: '/stocks/prices',
   
   // Alert endpoints
-  ALERTS: '/api/alerts',
-  ALERT_BY_ID: (id: string) => `/api/alerts/${id}`,
+  ALERTS: '/alerts',
+  ALERT_BY_ID: (id: string) => `/alerts/${id}`,
 
   // Notifications endpoints
   NOTIFICATION_TOKEN: '/notifications/token',
