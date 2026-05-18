@@ -1,10 +1,12 @@
 import React from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 
 // Import shared contracts
 import { version as sharedVersion } from '@stock-alert/shared';
@@ -21,19 +23,72 @@ import { PushNotificationManager } from './src/services/pushNotifications';
 import { NotificationRouter } from './src/services/notificationRouting';
 
 export type RootStackParamList = {
-  Home: undefined;
-  Watchlist: undefined;
-  Alerts: undefined;
-  Settings: undefined;
+  HomeTabs: undefined;
   StockDetail: {
     symbol: string;
     name?: string;
   };
 };
 
+export type TabParamList = {
+  Home: undefined;
+  Watchlist: undefined;
+  Alerts: undefined;
+  Settings: undefined;
+};
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 SplashScreen.preventAutoHideAsync();
+
+function TabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: true,
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = 'home';
+
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Watchlist') {
+            iconName = focused ? 'bookmark' : 'bookmark-outline';
+          } else if (route.name === 'Alerts') {
+            iconName = focused ? 'notifications' : 'notifications-outline';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings' : 'settings-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: '#8E8E93',
+      })}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen
+        name="Watchlist"
+        component={WatchlistScreen}
+        options={{ title: 'My Watchlist' }}
+      />
+      <Tab.Screen
+        name="Alerts"
+        component={AlertsListScreen}
+        options={{ title: 'Price Alerts' }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
+      />
+    </Tab.Navigator>
+  );
+}
 
 export default function App() {
   const notificationsEnabled = useAppStore((state) => state.settings.notifications);
@@ -124,33 +179,17 @@ export default function App() {
       >
         <Stack.Navigator
           screenOptions={{
-            headerShown: true,
+            headerShown: false,
           }}
         >
           <Stack.Screen
-            name="Home"
-            component={HomeScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'Home'>>}
-            options={{ title: 'Real-Time Stock Alert' }}
-          />
-          <Stack.Screen
-            name="Watchlist"
-            component={WatchlistScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'Watchlist'>>}
-            options={{ title: 'My Watchlist' }}
-          />
-          <Stack.Screen
-            name="Settings"
-            component={SettingsScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'Settings'>>}
-            options={{ title: 'Settings' }}
-          />
-          <Stack.Screen
-            name="Alerts"
-            component={AlertsListScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'Alerts'>>}
-            options={{ title: 'Price Alerts' }}
+            name="HomeTabs"
+            component={TabNavigator}
           />
           <Stack.Screen
             name="StockDetail"
             component={StockDetailScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'StockDetail'>>}
-            options={({ route }) => ({ title: route.params.symbol })}
+            options={({ route }) => ({ title: route.params.symbol, headerShown: true })}
           />
         </Stack.Navigator>
       </NavigationContainer>
@@ -158,3 +197,4 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
