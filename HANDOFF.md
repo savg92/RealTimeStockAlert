@@ -2,6 +2,7 @@
 
 ## Purpose
 - Get the `mobile` app running locally on an Android Studio emulator with the Expo dev client.
+- Connect the mobile app to the local backend for testing.
 
 ## Current state
 ✅ **FULLY WORKING** — Android development deployment is verified operational:
@@ -11,6 +12,8 @@
 - Metro bundler running and serving 1216 modules to emulator at 192.168.0.22:8081
 - Hot reload enabled for rapid development iteration
 - Emulator (Pixel_9) running and receiving app updates in real-time
+- **NEW**: Backend connectivity verified with development authentication token
+- **NEW**: Mobile-to-backend API flow tested and working (GET/POST alerts)
 
 ## Prerequisites
 - Node.js/npm installed (mobile app uses npm, not Bun).
@@ -20,6 +23,32 @@
   - Android SDK Platform-Tools (adb)
 - Android Studio's bundled JBR (Java 21) is automatically used via the launcher script.
 - Do NOT set `JAVA_HOME` manually unless you have a specific Java 17+ installation.
+- **Backend prerequisites** (for testing mobile-to-backend connection):
+  - Docker and Docker Compose installed (for PostgreSQL and Redis)
+  - Bun package manager installed (for backend)
+
+## Backend setup (for mobile testing)
+
+1. Start the PostgreSQL and Redis containers:
+   ```bash
+   cd /path/to/repo
+   docker-compose up -d  # or docker-compose up (for logs)
+   ```
+   - PostgreSQL will be on `localhost:5432`
+   - Redis will be on `localhost:6379`
+
+2. Start the backend server:
+   ```bash
+   cd apps/backend
+   bun run start
+   ```
+   - Backend will be on `http://localhost:3000`
+   - Verify with: `curl http://localhost:3000/health`
+
+3. The mobile app is configured to connect to `http://localhost:3000` using a development auth token:
+   - Token: `dev-test-token-12345` (automatically created and synced to database)
+   - This token is **only valid in development mode** (NODE_ENV=development)
+   - Mobile app can now make authenticated API calls without Firebase setup
 
 ## Local deploy steps
 1. Install mobile dependencies (first time only):
@@ -99,3 +128,45 @@ If you see `BUILD SUCCESSFUL` and the dev client boots on the device, deployment
 - `apps/mobile/metro.config.js`
 - `apps/mobile/app.config.ts`
 - `apps/mobile/AGENT_HANDOFF.md`
+- `apps/mobile/.env.local` (development configuration with auth token)
+
+## Testing mobile-to-backend connection
+
+### Verify backend is running:
+```bash
+curl http://localhost:3000/health
+# Expected: {"status":"ok","environment":"development",...}
+```
+
+### Test authentication with development token:
+```bash
+curl -H "Authorization: Bearer dev-test-token-12345" http://localhost:3000/alerts
+# Expected: [] (empty array or list of alerts)
+```
+
+### Create a test alert:
+```bash
+curl -X POST \
+  -H "Authorization: Bearer dev-test-token-12345" \
+  -H "Content-Type: application/json" \
+  -d '{"symbol":"AAPL","price":150.00,"threshold":150.00,"condition":"above"}' \
+  http://localhost:3000/alerts
+# Expected: {id, symbol, price, condition, threshold, ...}
+```
+
+### In the mobile app:
+1. Navigate to the **Alerts** screen
+2. The app should fetch and display alerts from the backend
+3. You can create, view, and delete alerts directly from the app
+
+## Development Authentication
+
+The mobile app uses a development token for local testing:
+- **Token**: `dev-test-token-12345`
+- **Configuration**: Set in `apps/mobile/.env.local` as `EXPO_PUBLIC_AUTH_BEARER_TOKEN`
+- **How it works**:
+  1. Mobile app sends Bearer token in Authorization header
+  2. Backend auth guard checks if `NODE_ENV=development` and token matches
+  3. If so, creates/syncs a test user (`dev@test.local`) to the database
+  4. Allows full API access without Firebase authentication
+- **Important**: This token is **ONLY for development**. Production builds require real Firebase tokens.
