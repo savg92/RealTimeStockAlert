@@ -23,8 +23,8 @@
 │                      │(Pub/Sub) │            │  (Auth,      │    │ (Push)│
 │                      │          │            │   Alerts,    │    │       │
 │                      └────┬─────┘            │   Dispatch,  │    └───────┘
-│                           │                 │   Tokens)    │              │
-│                           │                 └──────────────┘              │
+│                           │                  │   Tokens)    │                  │
+│                           │                  └──────────────┘                  │
 │     ┌─────────────────────┘                                               │
 │     │                                                                     │
 │  ┌──▼──────────────────────────────────────┐                            │
@@ -34,7 +34,7 @@
 │  │ │ • Alerts Screen (CRUD + updates)     ││                            │
 │  │ │ • Stock Detail + Chart               ││  ◀─────────────────────────┘
 │  │ │ • Settings (token sync)              ││                              
-│  │ │ • Socket.io client (subscribe/recv) ││                              
+│  │ │ • Socket.io client (subscribe/recv)  ││                              
 │  │ │ • REST fallback (no socket)          ││                              
 │  │ └──────────────────────────────────────┘│                              
 │  └─────────────────────────────────────────┘                              
