@@ -1,6 +1,130 @@
 import React from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { AlertCondition } from '@stock-alert/shared';
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  title: {
+    marginBottom: 16,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+  fieldContainer: {
+    marginBottom: 14,
+  },
+  label: {
+    marginBottom: 6,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#495057',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  input: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1a1a1a',
+  },
+  inputFocus: {
+    borderColor: '#007bff',
+    backgroundColor: '#fff',
+  },
+  conditionContainer: {
+    marginBottom: 14,
+    gap: 8,
+  },
+  conditionLabel: {
+    marginBottom: 8,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#495057',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  conditionButtonContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  conditionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#dee2e6',
+    backgroundColor: '#f8f9fa',
+    gap: 6,
+  },
+  conditionButtonActive: {
+    borderColor: '#007bff',
+    backgroundColor: '#e7f3ff',
+  },
+  conditionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#495057',
+  },
+  conditionButtonTextActive: {
+    color: '#007bff',
+  },
+  errorMessage: {
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#f8d7da',
+    borderLeftWidth: 3,
+    borderLeftColor: '#dc3545',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#721c24',
+    fontWeight: '500',
+  },
+  submitButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#007bff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#e9ecef',
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  submitButtonTextDisabled: {
+    color: '#6c757d',
+  },
+});
 
 export interface CreateAlertFormPayload {
   symbol: string;
@@ -54,54 +178,102 @@ export default function CreateAlertForm({ isSubmitting, onSubmit }: CreateAlertF
   }, [condition, onSubmit, symbol, threshold]);
 
   return (
-    <View className="mb-6 rounded-lg border border-border bg-background-secondary p-4">
-      <Text className="mb-3 text-lg font-bold text-text">Create Alert</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Create Alert</Text>
 
-      <Text className="mb-1 text-xs text-text-secondary">Symbol</Text>
-      <TextInput
-        value={symbol}
-        onChangeText={setSymbol}
-        autoCapitalize="characters"
-        placeholder="AAPL"
-        className="mb-3 rounded-lg border border-border bg-white px-3 py-2 text-text"
-      />
-
-      <Text className="mb-1 text-xs text-text-secondary">Target Price</Text>
-      <TextInput
-        value={threshold}
-        onChangeText={setThreshold}
-        keyboardType="decimal-pad"
-        placeholder="200"
-        className="mb-3 rounded-lg border border-border bg-white px-3 py-2 text-text"
-      />
-
-      <View className="mb-3 flex-row gap-2">
-        <TouchableOpacity
-          className={`flex-1 rounded-lg px-3 py-2 ${condition === 'above' ? 'bg-primary' : 'bg-border'}`}
-          onPress={() => setCondition('above')}
-        >
-          <Text className={`text-center font-semibold ${condition === 'above' ? 'text-white' : 'text-text'}`}>
-            Above
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className={`flex-1 rounded-lg px-3 py-2 ${condition === 'below' ? 'bg-primary' : 'bg-border'}`}
-          onPress={() => setCondition('below')}
-        >
-          <Text className={`text-center font-semibold ${condition === 'below' ? 'text-white' : 'text-text'}`}>
-            Below
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.fieldContainer}>
+        <Text style={styles.label}>Symbol</Text>
+        <TextInput
+          value={symbol}
+          onChangeText={setSymbol}
+          autoCapitalize="characters"
+          placeholder="e.g., AAPL"
+          placeholderTextColor="#adb5bd"
+          style={styles.input}
+          editable={!isSubmitting}
+        />
       </View>
 
-      {formError && <Text className="mb-2 text-sm text-danger">{formError}</Text>}
+      <View style={styles.fieldContainer}>
+        <Text style={styles.label}>Target Price</Text>
+        <TextInput
+          value={threshold}
+          onChangeText={setThreshold}
+          keyboardType="decimal-pad"
+          placeholder="e.g., 150.00"
+          placeholderTextColor="#adb5bd"
+          style={styles.input}
+          editable={!isSubmitting}
+        />
+      </View>
+
+      <View style={styles.conditionContainer}>
+        <Text style={styles.conditionLabel}>Condition</Text>
+        <View style={styles.conditionButtonContainer}>
+          <TouchableOpacity
+            style={[
+              styles.conditionButton,
+              condition === 'above' && styles.conditionButtonActive,
+            ]}
+            onPress={() => setCondition('above')}
+            disabled={isSubmitting}
+          >
+            <Ionicons 
+              name="arrow-up" 
+              size={16} 
+              color={condition === 'above' ? '#007bff' : '#495057'} 
+            />
+            <Text
+              style={[
+                styles.conditionButtonText,
+                condition === 'above' && styles.conditionButtonTextActive,
+              ]}
+            >
+              Above
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.conditionButton,
+              condition === 'below' && styles.conditionButtonActive,
+            ]}
+            onPress={() => setCondition('below')}
+            disabled={isSubmitting}
+          >
+            <Ionicons 
+              name="arrow-down" 
+              size={16} 
+              color={condition === 'below' ? '#007bff' : '#495057'} 
+            />
+            <Text
+              style={[
+                styles.conditionButtonText,
+                condition === 'below' && styles.conditionButtonTextActive,
+              ]}
+            >
+              Below
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {formError && (
+        <View style={styles.errorMessage}>
+          <Text style={styles.errorText}>{formError}</Text>
+        </View>
+      )}
 
       <TouchableOpacity
-        className={`rounded-lg px-4 py-3 ${isSubmitting ? 'bg-border' : 'bg-primary'}`}
+        style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
         onPress={handleSubmit}
         disabled={isSubmitting}
       >
-        <Text className="text-center font-semibold text-white">
+        <Ionicons 
+          name={isSubmitting ? 'hourglass-outline' : 'add-circle-outline'}
+          size={18}
+          color={isSubmitting ? '#6c757d' : '#fff'}
+        />
+        <Text style={[styles.submitButtonText, isSubmitting && styles.submitButtonTextDisabled]}>
           {isSubmitting ? 'Creating…' : 'Create Alert'}
         </Text>
       </TouchableOpacity>

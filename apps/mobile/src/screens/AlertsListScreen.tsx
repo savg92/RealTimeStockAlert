@@ -125,50 +125,156 @@ export default function AlertsListScreen() {
   );
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 24 }}>
-      <Text className="mb-1 text-2xl font-bold text-text">Price Alerts</Text>
-      <Text className="mb-4 text-sm text-text-secondary">
-        Create, view, and remove active price alerts.
-      </Text>
+    <ScrollView 
+      style={{ flex: 1, backgroundColor: '#f8f9fa' }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 24 }}
+    >
+      {/* Header */}
+      <View style={{ marginBottom: 24 }}>
+        <Text style={{ fontSize: 24, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 }}>
+          Price Alerts
+        </Text>
+        <Text style={{ fontSize: 14, color: '#6c757d' }}>
+          Create, view, and remove active price alerts.
+        </Text>
+      </View>
 
+      {/* Create Alert Form */}
       <CreateAlertForm isSubmitting={isSubmitting} onSubmit={handleCreateAlert} />
 
-      <View className="mb-3 flex-row items-center justify-between">
-        <Text className="text-lg font-bold text-text">Active Alerts</Text>
-        <TouchableOpacity onPress={loadAlerts}>
-          <Text className="font-semibold text-primary">Refresh</Text>
+      {/* Active Alerts Section */}
+      <View style={{ marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1a1a1a' }}>
+          Active Alerts
+        </Text>
+        <TouchableOpacity onPress={loadAlerts} style={{ padding: 8 }}>
+          <Text style={{ fontWeight: '600', color: '#007bff', fontSize: 14 }}>
+            ↻ Refresh
+          </Text>
         </TouchableOpacity>
       </View>
 
+      {/* Loading State */}
       {isLoading && (
-        <View className="mb-3 rounded-lg border border-border bg-background-secondary p-3">
-          <Text className="text-sm text-text-secondary">Loading alerts…</Text>
+        <View 
+          style={{ 
+            marginBottom: 16, 
+            borderRadius: 10, 
+            backgroundColor: '#fff',
+            borderWidth: 1,
+            borderColor: '#e9ecef',
+            padding: 16,
+            alignItems: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 14, color: '#6c757d' }}>Loading alerts…</Text>
         </View>
       )}
 
+      {/* Error State */}
       {error && (
-        <View className="mb-3 rounded-lg border border-danger bg-background-secondary p-3">
-          <Text className="text-sm text-danger">{error}</Text>
+        <View 
+          style={{ 
+            marginBottom: 16,
+            borderLeftWidth: 4,
+            borderLeftColor: '#dc3545',
+            backgroundColor: '#f8d7da',
+            borderRadius: 6,
+            padding: 12
+          }}
+        >
+          <Text style={{ fontSize: 13, color: '#721c24', fontWeight: '500' }}>
+            ⚠️ {error}
+          </Text>
         </View>
       )}
 
+      {/* Alerts List */}
       {alerts.length === 0 ? (
-        <View className="rounded-lg border border-border bg-background-secondary p-4">
-          <Text className="text-sm text-text-secondary">No active alerts yet.</Text>
+        <View 
+          style={{
+            borderRadius: 10,
+            backgroundColor: '#e7f3ff',
+            borderWidth: 1,
+            borderColor: '#b3d9ff',
+            padding: 24,
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Text style={{ fontSize: 16, fontWeight: '600', color: '#004085', marginBottom: 8 }}>
+            📢 No alerts yet
+          </Text>
+          <Text style={{ fontSize: 13, color: '#004085', textAlign: 'center', lineHeight: 18 }}>
+            Create your first alert above to get notified when prices hit your target levels.
+          </Text>
         </View>
       ) : (
         alerts.map((alert) => (
           <View
             key={alert.id}
-            className="mb-3 rounded-lg border border-border bg-background-secondary p-4"
+            style={{
+              marginBottom: 12,
+              borderRadius: 10,
+              backgroundColor: '#fff',
+              borderWidth: 1,
+              borderColor: '#e9ecef',
+              padding: 14,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.08,
+              shadowRadius: 2,
+              elevation: 1,
+            }}
           >
-            <Text className="text-base font-bold text-text">{alert.symbol}</Text>
-            <Text className="text-sm text-text-secondary">
-              Trigger when {alert.symbol} is {alert.condition} ${alert.threshold.toFixed(2)}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+              <View>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#1a1a1a' }}>
+                  {alert.symbol}
+                </Text>
+              </View>
+              <View 
+                style={{
+                  backgroundColor: alert.condition === 'above' ? '#d4edda' : '#fff3cd',
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 6
+                }}
+              >
+                <Text 
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '600',
+                    color: alert.condition === 'above' ? '#28a745' : '#856404',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  {alert.condition}
+                </Text>
+              </View>
+            </View>
+            
+            <Text style={{ fontSize: 13, color: '#6c757d', marginBottom: 12 }}>
+              Trigger when price reaches <Text style={{ fontWeight: '600', color: '#1a1a1a' }}>${alert.threshold.toFixed(2)}</Text>
             </Text>
-            <TouchableOpacity onPress={() => handleDeleteAlert(alert.id)} className="mt-3 self-start">
-              <Text className="font-semibold text-danger">Delete alert</Text>
-            </TouchableOpacity>
+
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity 
+                onPress={() => handleDeleteAlert(alert.id)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: '#f8d7da',
+                  borderRadius: 8,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontWeight: '600', color: '#dc3545', fontSize: 13 }}>
+                  🗑️ Delete
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ))
       )}
