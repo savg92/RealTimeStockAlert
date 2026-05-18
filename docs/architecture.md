@@ -23,16 +23,16 @@
 │                      │(Pub/Sub) │            │  (Auth,      │    │ (Push)│  │
 │                      │          │            │   Alerts,    │    │       │  │
 │                      └────┬─────┘            │   Dispatch,  │    └───────┘  │
-│                           │                  │   Tokens)    │           │   │
-│                           │                  └──────────────┘           │   │
-│     ┌─────────────────────┘                                             │   │
-│     │                                                                   │   │
-│  ┌──▼──────────────────────────────────────┐                            │   │
-│  │   MOBILE (Expo React Native)            │                            │   │
-│  │ ┌──────────────────────────────────────┐│                            │   │
-│  │ │ • Watchlist Screen (live prices)     ││                            │   │
-│  │ │ • Alerts Screen (CRUD + updates)     ││                            │   │
-│  │ │ • Stock Detail + Chart               ││  ◀─────────────────────────┘   │
+│                           │                  │   Tokens)    │          │   │
+│                           │                  └──────────────┘          │   │
+│     ┌─────────────────────┘                                            │   │
+│     │                                                                  │   │
+│  ┌──▼──────────────────────────────────────┐                           │   │
+│  │   MOBILE (Expo React Native)            │                           │   │
+│  │ ┌──────────────────────────────────────┐│                           │   │
+│  │ │ • Watchlist Screen (live prices)     ││                           │   │
+│  │ │ • Alerts Screen (CRUD + updates)     ││                           │   │
+│  │ │ • Stock Detail + Chart               ││  ◀────────────────────────┘   │
 │  │ │ • Settings (token sync)              ││                                │
 │  │ │ • Socket.io client (subscribe/recv)  ││                                │
 │  │ │ • REST fallback (no socket)          ││                                │
