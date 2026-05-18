@@ -7,8 +7,8 @@
 │                          REAL-TIME STOCK ALERT SYSTEM                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  ┌──────────────────┐                    ┌──────────────────────────────┐  │
-│  │  FINNHUB (WS)    │──────────────────▶ │  BACKEND (NestJS + Socket)  │  │
+│  ┌──────────────────┐                    ┌──────────────────────────────┐      │
+│  │  FINNHUB (WS)    │──────────────────▶ │  BACKEND (NestJS + Socket)      │  │
 │  │  Market Prices   │                    │  - Ingestion                 │  │
 │  └──────────────────┘                    │  - Alert Pipeline            │  │
 │         │                                │  - Notification Service      │  │
