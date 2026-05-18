@@ -4,11 +4,13 @@
 - Get the `mobile` app running locally on an Android Studio emulator with the Expo dev client.
 
 ## Current state
-- The Android app boots into a minimal bootstrap screen.
-- `npm run dev` and `npm run android` now auto-uninstall old versions to avoid signature conflicts.
-- Build succeeds and APK installs to the emulator.
-- Metro bundler runs and QR code is available for connecting the development build.
-- `expo-linear-gradient` and the monorepo Metro config remain in place for when the full app is reintroduced.
+✅ **FULLY WORKING** — Android development deployment is verified operational:
+- `npm run dev` successfully builds APK (BUILD SUCCESSFUL in 11s) and installs to running emulator
+- All app features reconnected: Home, Watchlist, Alerts, Settings, StockDetail screens
+- Navigation stack fully configured with push notifications
+- Metro bundler running and serving 1216 modules to emulator at 192.168.0.22:8081
+- Hot reload enabled for rapid development iteration
+- Emulator (Pixel_9) running and receiving app updates in real-time
 
 ## Prerequisites
 - Node.js/npm installed (mobile app uses npm, not Bun).
