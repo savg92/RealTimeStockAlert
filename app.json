@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "3d146c30-7181-4530-bf7c-b2fff2e4cbde"
+      }
+    },
+    "android": {
+      "package": "com.stockalert.mobile"
+    }
+  }
+}

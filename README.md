@@ -5,6 +5,7 @@ A production-ready, full-stack mobile application for real-time stock price trac
 ## What This Project Is
 
 **Core Features:**
+
 - **Live Price Dashboard** — real-time price updates via WebSocket with automatic fallback to REST polling
 - **Custom Price Alerts** — set threshold-based alerts (`above`/`below`) for any stock symbol
 - **Push Notifications** — Firebase Cloud Messaging integration for alert delivery to mobile devices
@@ -13,6 +14,7 @@ A production-ready, full-stack mobile application for real-time stock price trac
 - **Fallback Resilience** — graceful degradation when services unavailable (socket outages, Firebase disabled, etc.)
 
 **Architecture:**
+
 - **Backend:** NestJS + Socket.io, Finnhub WebSocket ingestion, alert engine, notification service
 - **Mobile:** Expo React Native, Zustand state management, real-time socket client
 - **Database:** PostgreSQL (alerts, users, dispatch logs) + Redis (transient price pub/sub)
@@ -23,7 +25,7 @@ A production-ready, full-stack mobile application for real-time stock price trac
 
 ### Prerequisites
 
-- **Bun** >= 1.0 ([install](https://bun.sh)) or Node.js + npm
+- **Bun** >= 1.0 ([install](https://bun.sh))
 - **Docker** + **Docker Compose** (for PostgreSQL and Redis)
 - **Finnhub API key** (free tier at [finnhub.io](https://finnhub.io))
 - **Firebase credentials** (optional for local dev, required for production notifications)
@@ -31,14 +33,13 @@ A production-ready, full-stack mobile application for real-time stock price trac
 ### 5-Minute Setup
 
 1. **Install dependencies:**
+
    ```bash
    bun install
    ```
-   ```
-   npm install
-   ```
 
 2. **Configure environment:**
+
    ```bash
    cp apps/backend/.env.example apps/backend/.env
    cp apps/mobile/.env.example apps/mobile/.env.local
@@ -46,25 +47,22 @@ A production-ready, full-stack mobile application for real-time stock price trac
    ```
 
 3. **Start data services:**
+
    ```bash
    docker compose up -d postgres redis
    ```
 
 4. **Run backend and mobile:**
+
    ```bash
    bun run dev
    ```
-   ```
-   npm run dev
-   ```
+
    Or separately:
+
    ```bash
    bun run dev:backend    # NestJS on http://localhost:3000
-   bun run dev:mobile     # Expo on http://localhost:19000
-   ```
-   ```
-   npm run dev:backend
-   npm run dev:mobile
+   bun run dev:mobile     # Expo dev-client on http://localhost:19000
    ```
 
 5. **Verify:**
@@ -72,6 +70,13 @@ A production-ready, full-stack mobile application for real-time stock price trac
    curl http://localhost:3000/health
    open http://localhost:3000/docs  # Swagger UI
    ```
+
+If Expo Go reports that the project is incompatible, install a matching development build first:
+
+```bash
+npx eas-cli build --platform android --profile development
+npx eas-cli build --platform ios --profile development
+```
 
 ## Project Structure
 
@@ -130,29 +135,31 @@ A production-ready, full-stack mobile application for real-time stock price trac
 
 From repository root:
 
-| Command | Purpose |
-|---------|---------|
-| `bun run dev` | Start backend + mobile in parallel (watch mode) |
-| `bun run dev:backend` | Start NestJS dev server only |
-| `bun run dev:mobile` | Start Expo dev server only |
-| `bun run build` | Build all workspaces |
-| `bun run build:backend` | Build backend for production |
-| `bun run build:mobile` | Build mobile app |
-| `bun run test` | Run all test suites (backend, mobile, shared) |
-| `bun run test:backend` | Backend tests only |
-| `bun run test:mobile` | Mobile tests only |
-| `bun run lint` | Run ESLint on all packages |
-| `bun run format:check` | Check code formatting (Prettier) |
+| Command                 | Purpose                                         |
+| ----------------------- | ----------------------------------------------- |
+| `bun run dev`           | Start backend + mobile in parallel (watch mode) |
+| `bun run dev:backend`   | Start NestJS dev server only                    |
+| `bun run dev:mobile`    | Start Expo dev server only                      |
+| `bun run build`         | Build all workspaces                            |
+| `bun run build:backend` | Build backend for production                    |
+| `bun run build:mobile`  | Build mobile app                                |
+| `bun run test`          | Run all test suites (backend, mobile, shared)   |
+| `bun run test:backend`  | Backend tests only                              |
+| `bun run test:mobile`   | Mobile tests only                               |
+| `bun run lint`          | Run ESLint on all packages                      |
+| `bun run format:check`  | Check code formatting (Prettier)                |
 
 ## API Overview
 
 ### REST Endpoints
 
 **Public (no auth required):**
+
 - `GET /health` — service health summary
 - `GET /ready` — readiness check (DB, cache, auth status)
 
 **Authenticated (Bearer token required):**
+
 - `POST /alerts` — create price alert
 - `GET /alerts` — list user's alerts
 - `DELETE /alerts/:id` — delete alert
@@ -161,16 +168,19 @@ From repository root:
 - `POST /notifications/test` — send test notification
 
 **Documentation:**
+
 - `GET /docs` — Swagger UI (interactive API explorer)
 - `GET /docs-json` — OpenAPI JSON schema
 
 ### WebSocket (Socket.io) Events
 
 **Client → Server:**
+
 - `price:subscribe {symbol}` — subscribe to symbol updates
 - `price:unsubscribe {symbol}` — unsubscribe from symbol
 
 **Server → Client:**
+
 - `price:update {symbol, price, change}` — live price broadcast
 - `connection-status {status: "connected"|"reconnecting"|"offline"}` — connection state notification
 
@@ -205,15 +215,15 @@ Prepare release artifacts for handoff:
 ```bash
 # Verify tools
 bun --version
-bunx --bun expo --version
-bunx --bun eas-cli --version
+npx expo --version
+npx eas-cli --version
 
 # Confirm mobile config
-bunx --bun expo config --type public
+npx expo config --type public
 
 # Build release APK
-bunx --bun eas-cli login
-bunx --bun eas-cli build --platform android --profile production --non-interactive
+npx eas-cli login
+npx eas-cli build --platform android --profile production --non-interactive
 
 # Download from build dashboard once finished
 ```
@@ -268,13 +278,13 @@ Run `bun run test` to verify all suites pass.
 
 ## Troubleshooting
 
-| Issue | Quick Check |
-|-------|------------|
-| Backend won't start | Verify `DATABASE_URL` and Postgres reachable; check logs for migration errors |
-| No real-time prices | Verify Finnhub API key is valid; check backend logs for WebSocket errors |
-| Mobile cannot connect | Verify `EXPO_PUBLIC_SOCKET_URL` matches backend; check firewall |
-| No push notifications | Ensure Firebase credentials set and `FIREBASE_ENABLE_MESSAGING=true`; verify token registration |
-| Socket disconnects frequently | Backend logs show connection attempts; after 5 failures, switches to REST polling |
+| Issue                         | Quick Check                                                                                     |
+| ----------------------------- | ----------------------------------------------------------------------------------------------- |
+| Backend won't start           | Verify `DATABASE_URL` and Postgres reachable; check logs for migration errors                   |
+| No real-time prices           | Verify Finnhub API key is valid; check backend logs for WebSocket errors                        |
+| Mobile cannot connect         | Verify `EXPO_PUBLIC_SOCKET_URL` matches backend; check firewall                                 |
+| No push notifications         | Ensure Firebase credentials set and `FIREBASE_ENABLE_MESSAGING=true`; verify token registration |
+| Socket disconnects frequently | Backend logs show connection attempts; after 5 failures, switches to REST polling               |
 
 See [docs/setup.md#operational-troubleshooting](./docs/setup.md#operational-troubleshooting) for detailed diagnostic steps.
 

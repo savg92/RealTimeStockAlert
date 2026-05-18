@@ -4,6 +4,7 @@
   "private": true,
   "description": "Real-Time Stock Alert System - Monorepo",
   "type": "module",
+  "packageManager": "bun@1.0.0",
   "scripts": {
     "dev": "bun run --parallel dev:backend dev:mobile",
     "dev:backend": "bun run --cwd apps/backend dev",
@@ -29,11 +30,11 @@
     "packages/shared"
   ],
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "eslint": "^8.57.1",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
+    "eslint": "^10.4.0",
     "prettier": "^3.8.3",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "engines": {
     "bun": ">=1.0.0"

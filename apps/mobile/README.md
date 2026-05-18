@@ -24,24 +24,18 @@ A React Native mobile application for tracking real-time stock alerts using Expo
 ## Prerequisites
 
 - Node.js >= 18.x
-- Bun >= 1.0.0 (or npm/yarn)
+- npm >= 10
+- Android Studio with its bundled JBR/JDK 17, or an explicit `JAVA_HOME`
 - Expo CLI (optional, auto-installed via Expo package)
 
 ## Setup
 
 ### 1. Install Dependencies
 
-From the repository root:
+From `apps/mobile`:
 
 ```bash
-bun install
-```
-
-Or install mobile-specific dependencies:
-
-```bash
-cd apps/mobile
-bun install
+npm install
 ```
 
 ### 2. Configure Environment
@@ -77,40 +71,37 @@ EXPO_ANDROID_GOOGLE_SERVICES_FILE=./google-services.json
 ### 3. Run Development Server
 
 ```bash
-# From repository root
-bun run dev:mobile
-
-# Or from apps/mobile directory
-bun run dev
-# or
 npm run dev
 ```
 
-This will start the Expo development server on http://localhost:19000 (or a similar port).
+This starts the Expo dev client flow, boots an emulator if needed, builds the dev client, and opens Android.
+
+If you want to use Expo Go instead, run `npm run dev:go` from `apps/mobile`.
+
+To create the matching native client for iOS or Android, use the development EAS profile:
+
+```bash
+npx eas-cli build --platform android --profile development
+npx eas-cli build --platform ios --profile development
+```
 
 ## Running on Devices
 
 ### iOS Simulator
 
 ```bash
-bun run ios
-# or
 npm run ios
 ```
 
 ### Android Emulator
 
 ```bash
-bun run android
-# or
 npm run android
 ```
 
 ### Web (Experimental)
 
 ```bash
-bun run web
-# or
 npm run web
 ```
 
@@ -119,8 +110,6 @@ npm run web
 ### Local export (bundle/static assets)
 
 ```bash
-bun run build
-# or
 npm run build
 ```
 
@@ -129,10 +118,10 @@ npm run build
 From `apps/mobile`:
 
 ```bash
-bunx --bun expo config --type public
-bunx --bun eas-cli --version
-bunx --bun eas-cli login
-bunx --bun eas-cli build --platform android --profile production --non-interactive
+npx expo config --type public
+npx eas-cli --version
+npx eas-cli login
+npx eas-cli build --platform android --profile production --non-interactive
 ```
 
 Notes:
@@ -180,6 +169,7 @@ apps/mobile/
 ### Types
 
 Type definitions for:
+
 - `Stock`: Stock data
 - `AlertConfig`: Price alert configuration
 - `RealTimeUpdate`: Real-time price updates
@@ -190,13 +180,9 @@ Type definitions for:
 ```bash
 # Run tests
 bun run test
-# or
-npm run test
 
 # Watch mode
 bun run test:watch
-# or
-npm run test:watch
 ```
 
 ## Linting
@@ -204,13 +190,9 @@ npm run test:watch
 ```bash
 # Lint code
 bun run lint
-# or
-npm run lint
 
 # Format code
 bun run format
-# or
-npm run format
 ```
 
 ## Shared Contracts
@@ -226,9 +208,9 @@ See `packages/shared/src/index.ts` for available exports.
 ## Development Workflow
 
 1. Update shared contracts in `packages/shared/src/`
-2. Build shared package: `bun run build:shared`
+2. Build shared package from the shared workspace: `npm run --prefix ../../packages/shared build`
 3. Import in mobile app with `@stock-alert/shared` alias
-4. Run mobile app: `bun run dev:mobile`
+4. Run mobile app: `npm run dev`
 
 ## Debugging
 

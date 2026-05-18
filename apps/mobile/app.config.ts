@@ -18,17 +18,29 @@ const normalizeSlug = (rawSlug?: string): string | undefined => {
 export default ({ config }: ConfigContext): ExpoConfig => {
   const googleServicesFile = resolveGoogleServicesFile(process.env.EXPO_ANDROID_GOOGLE_SERVICES_FILE);
   const androidPackage = process.env.EXPO_ANDROID_PACKAGE?.trim() || config.android?.package || 'com.stockalert.mobile';
+  const iosBundleIdentifier = process.env.EXPO_IOS_BUNDLE_IDENTIFIER?.trim() || config.ios?.bundleIdentifier || 'com.stockalert.mobile';
   const slug = normalizeSlug(process.env.EXPO_SLUG) || 'real-time-stock-alert';
   const name = process.env.EXPO_APP_NAME?.trim() || config.name || 'Real-Time Stock Alert';
+  const easProjectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID?.trim() || '3d146c30-7181-4530-bf7c-b2fff2e4cbde';
 
   return {
     ...config,
     name,
     slug,
+    extra: {
+      ...config.extra,
+      eas: {
+        projectId: easProjectId,
+      },
+    },
     android: {
       ...config.android,
       package: androidPackage,
       ...(googleServicesFile ? { googleServicesFile } : {}),
+    },
+    ios: {
+      ...config.ios,
+      bundleIdentifier: iosBundleIdentifier,
     },
   };
 };

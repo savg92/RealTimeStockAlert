@@ -13,7 +13,7 @@ const parseError = async (response: Response): Promise<string> => {
     if (typeof data?.message === 'string') {
       return data.message;
     }
-  } catch (_error) {
+  } catch {
     // Ignore parse error and fall back to status text
   }
 
