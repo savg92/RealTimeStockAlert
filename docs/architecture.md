@@ -8,13 +8,13 @@
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌──────────────────┐                    ┌──────────────────────────────┐   │
-│  │  FINNHUB (WS)    │──────────────────▶ │  BACKEND (NestJS + Socket)   │  │
-│  │  Market Prices   │                    │  - Ingestion                 │  │
-│  └──────────────────┘                    │  - Alert Pipeline            │  │
-│         │                                │  - Notification Service      │  │
-│         │ (REST fallback                 │  - Health/Readiness probes   │  │
-│         │  after 5 failures)             │  - Swagger/OpenAPI @ /docs   │  │
-│         │                                └────────────┬──────────────────┘  │
+│  │  FINNHUB (WS)    │──────────────────▶ │  BACKEND (NestJS + Socket)   │   │
+│  │  Market Prices   │                    │  - Ingestion                 │   │
+│  └──────────────────┘                    │  - Alert Pipeline            │   │
+│         │                                │  - Notification Service      │   │
+│         │ (REST fallback                 │  - Health/Readiness probes   │   │
+│         │  after 5 failures)             │  - Swagger/OpenAPI @ /docs   │   │
+│         │                                └────────────┬─────────────────┘   │
 │         │                                             │                     │
 │         └─────────────────┬──────────────────────────┼──────────────────┐   │
 │                           │                          │                  │   │
