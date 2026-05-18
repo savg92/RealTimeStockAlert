@@ -15,6 +15,17 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing Firebase bearer token');
     }
 
+    // Development mode: accept dev-test token for mobile testing
+    if (process.env.NODE_ENV === 'development' && token === 'dev-test-token-12345') {
+      request.user = {
+        id: 'dev-user-1',
+        firebaseId: 'dev-firebase-id-1',
+        email: 'dev@test.local',
+        name: 'Development Test User',
+      };
+      return true;
+    }
+
     request.user = await this.firebaseAuthService.verifyTokenAndSyncUser(token);
     return true;
   }
@@ -32,3 +43,4 @@ export class AuthGuard implements CanActivate {
     return token;
   }
 }
+
