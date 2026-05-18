@@ -34,7 +34,11 @@ async function bootstrap() {
     },
   });
 
-  await app.listen(port);
+  // Allow requests from the mobile dev client / device
+  app.enableCors();
+
+  // Bind to 0.0.0.0 so the server is reachable from other devices on the LAN
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 Application is running on http://localhost:${port}`, 'NestApplication', {
     environment: nodeEnv,

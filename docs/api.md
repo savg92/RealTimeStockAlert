@@ -48,6 +48,27 @@ Readiness check for container orchestration probes.
 
 **Use case:** Kubernetes liveness/readiness probes. Returns HTTP 503 if not ready.
 
+### Stocks
+
+#### GET /stocks/prices
+Current watchlist snapshot used by the mobile dashboard to hydrate initial rows before socket updates arrive.
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id": "AAPL",
+    "symbol": "AAPL",
+    "name": "Apple Inc.",
+    "price": 191.25,
+    "change": 1.75,
+    "changePercent": 0.92,
+    "currency": "USD",
+    "lastUpdated": "2026-05-18T00:00:00.000Z"
+  }
+]
+```
+
 ### Alerts (Bearer auth required)
 
 #### POST /alerts

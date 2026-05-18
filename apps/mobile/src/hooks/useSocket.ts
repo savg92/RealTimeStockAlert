@@ -112,10 +112,30 @@ export const useSocket = (): UseSocketReturn => {
   }, []);
 
   const fetchPricesViaRest = useCallback(async () => {
-    const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_PRICES}`);
-    const data = await response.json();
-    setLastKnownState(data);
-    return data;
+    const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_PRICES}`;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('Failed to load live prices: request timed out.'));
+        }, API_CONFIG.TIMEOUT);
+      });
+      const response = await Promise.race([
+        fetch(url),
+        timeoutPromise,
+      ]) as Response;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch prices: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      setLastKnownState(data);
+      return data;
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
   }, []);
 
   const statusMessage = useMemo(() => {
@@ -143,7 +163,7 @@ export const useSocket = (): UseSocketReturn => {
     };
   }, [connect, disconnect]);
 
-  return {
+  const exposed = useMemo(() => ({
     socket: socketRef.current,
     isOnline,
     reconnectAttempts,
@@ -157,5 +177,20 @@ export const useSocket = (): UseSocketReturn => {
     emit,
     on,
     fetchPricesViaRest,
-  };
+  }), [
+    isOnline,
+    reconnectAttempts,
+    lastKnownState,
+    connectionStatus,
+    statusMessage,
+    connect,
+    disconnect,
+    subscribe,
+    unsubscribe,
+    emit,
+    on,
+    fetchPricesViaRest,
+  ]);
+
+  return exposed;
 };

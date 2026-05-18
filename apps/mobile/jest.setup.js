@@ -53,3 +53,7 @@ jest.mock('@react-navigation/native', () => ({
     params: {},
   }),
 }));
+
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: 'Ionicons',
+}));

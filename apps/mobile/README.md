@@ -50,12 +50,16 @@ Update the API endpoints in `.env.local` if necessary:
 
 ```
 EXPO_PUBLIC_API_URL=http://localhost:3000
-EXPO_PUBLIC_SOCKET_URL=ws://localhost:3000
+EXPO_PUBLIC_SOCKET_URL=http://localhost:3000
 EXPO_PUBLIC_AUTH_BEARER_TOKEN=<firebase-id-token>
 ```
 
 `EXPO_PUBLIC_AUTH_BEARER_TOKEN` is optional but required to sync FCM device tokens with authenticated backend routes.
 If it is unset, the mobile app uses a local no-op sync client so Expo/dev builds still run without committed secrets.
+
+On an Android emulator, the app falls back to `http://10.0.2.2:3000` automatically when these values are unset.
+
+The watchlist now hydrates its initial rows from `GET /stocks/prices` before subscribing to live socket updates.
 
 Set `EXPO_PUBLIC_ENABLE_NOTIFICATIONS=false` to fully disable notification sync during local development.
 

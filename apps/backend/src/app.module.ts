@@ -10,6 +10,8 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { PinoLogger } from './common/logger/logger.service';
 import { NotificationsModule } from './notifications/notifications.module';
+import { DevModule } from './dev/dev.module';
+import { StocksModule } from './stocks/stocks.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { NotificationsModule } from './notifications/notifications.module';
     SocketModule,
     AlertsModule,
     NotificationsModule,
+    DevModule,
+    StocksModule,
   ],
   providers: [
     {

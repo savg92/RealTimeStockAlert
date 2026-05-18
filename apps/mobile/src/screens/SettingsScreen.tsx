@@ -205,7 +205,7 @@ export default function SettingsScreen() {
 
         {/* Notifications Section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>🔔 Notifications</Text>
+          <Text style={styles.sectionTitle}>Notifications</Text>
           <SettingItem
             label="Push Notifications"
             description="Receive price alerts and updates"
@@ -232,7 +232,7 @@ export default function SettingsScreen() {
 
         {/* Display Section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>🎨 Display</Text>
+          <Text style={styles.sectionTitle}>Display</Text>
           <SettingItem
             label="Dark Mode"
             description="Use dark theme"
@@ -255,7 +255,7 @@ export default function SettingsScreen() {
 
         {/* Data Section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>📊 Data</Text>
+          <Text style={styles.sectionTitle}>Data</Text>
           <SettingItem
             label="Auto-Refresh"
             description="Refresh data every 30 seconds"
@@ -277,7 +277,7 @@ export default function SettingsScreen() {
 
         {/* About Section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>ℹ️ About</Text>
+          <Text style={styles.sectionTitle}>About</Text>
           <SettingItem
             label="Version"
             description="1.0.0"

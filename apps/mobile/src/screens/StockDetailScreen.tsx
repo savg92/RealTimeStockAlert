@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
@@ -10,26 +10,19 @@ import StockChart, { StockChartPoint } from '../components/StockChart';
 
 type StockDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'StockDetail'>;
 
-interface StockListItem {
-  symbol: string;
-  price: number;
-}
+type TimeRangeKey = '1H' | '5H' | '1D' | '5D' | '1M' | '3M' | '1Y' | '5Y' | 'ALL';
 
-const MOCK_BASELINE: Record<string, number> = {
-  AAPL: 188.5,
-  MSFT: 409.8,
-  GOOGL: 140.1,
-  AMZN: 177.4,
-  TSLA: 246.2,
-};
-
-const MOCK_DETAILS: Record<string, { high52w: number; low52w: number; marketCap: string; volume: string; pe: number }> = {
-  AAPL: { high52w: 245.89, low52w: 165.23, marketCap: '3.2T', volume: '52.4M', pe: 28.5 },
-  MSFT: { high52w: 445.23, low52w: 310.11, marketCap: '2.8T', volume: '24.8M', pe: 32.1 },
-  GOOGL: { high52w: 198.34, low52w: 102.21, marketCap: '1.7T', volume: '18.2M', pe: 24.7 },
-  AMZN: { high52w: 188.45, low52w: 101.26, marketCap: '1.9T', volume: '41.3M', pe: 45.2 },
-  TSLA: { high52w: 299.29, low52w: 138.80, marketCap: '760B', volume: '93.5M', pe: 58.9 },
-};
+const TIME_RANGES: Array<{ key: TimeRangeKey; label: string; durationMs?: number }> = [
+  { key: '1H', label: '1H', durationMs: 60 * 60 * 1000 },
+  { key: '5H', label: '5H', durationMs: 5 * 60 * 60 * 1000 },
+  { key: '1D', label: '1D', durationMs: 24 * 60 * 60 * 1000 },
+  { key: '5D', label: '5D', durationMs: 5 * 24 * 60 * 60 * 1000 },
+  { key: '1M', label: '1M', durationMs: 30 * 24 * 60 * 60 * 1000 },
+  { key: '3M', label: '3M', durationMs: 90 * 24 * 60 * 60 * 1000 },
+  { key: '1Y', label: '1Y', durationMs: 365 * 24 * 60 * 60 * 1000 },
+  { key: '5Y', label: '5Y', durationMs: 5 * 365 * 24 * 60 * 60 * 1000 },
+  { key: 'ALL', label: 'ALL' },
+];
 
 const isRealTimeUpdate = (value: unknown): value is RealTimeUpdate => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -40,28 +33,6 @@ const isRealTimeUpdate = (value: unknown): value is RealTimeUpdate => {
   return typeof maybeUpdate.symbol === 'string' && typeof maybeUpdate.price === 'number';
 };
 
-const isStockList = (value: unknown): value is StockListItem[] => (
-  Array.isArray(value)
-    && value.every((item) => (
-      typeof item === 'object'
-      && item !== null
-      && 'symbol' in item
-      && 'price' in item
-      && typeof (item as StockListItem).symbol === 'string'
-      && typeof (item as StockListItem).price === 'number'
-    ))
-);
-
-const createChartSeries = (price: number): StockChartPoint[] => {
-  const now = Date.now();
-  const multipliers = [0.992, 0.998, 1.004, 1.001, 1.009, 1.012, 1.006, 1.01];
-
-  return multipliers.map((factor, index) => ({
-    price: Number((price * factor).toFixed(2)),
-    timestamp: new Date(now - ((multipliers.length - index - 1) * 5 * 60_000)).toISOString(),
-  }));
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -69,8 +40,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
     flexDirection: 'row',
@@ -81,52 +52,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   symbol: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1a1a1a',
   },
   companyName: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#6c757d',
-    marginTop: 2,
+    marginTop: 1,
   },
   contentContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
   },
   priceSection: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#e9ecef',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  priceContainer: {
-    marginBottom: 12,
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
   },
   currentPrice: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: '700',
     color: '#1a1a1a',
   },
-  priceSubtext: {
-    fontSize: 12,
+  metaText: {
+    fontSize: 11,
     color: '#6c757d',
-    marginTop: 6,
-  },
-  changeContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
   },
   changeBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     backgroundColor: '#d4edda',
@@ -135,85 +97,61 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8d7da',
   },
   changeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#28a745',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1e7e34',
   },
   changeTextNegative: {
-    color: '#dc3545',
+    color: '#b02a37',
   },
-  statusText: {
-    fontSize: 12,
-    color: '#6c757d',
+  rangeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  rangeButton: {
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#fff',
+  },
+  rangeButtonActive: {
+    backgroundColor: '#007bff',
+    borderColor: '#007bff',
+  },
+  rangeButtonText: {
+    fontSize: 11,
+    color: '#495057',
+    fontWeight: '600',
+  },
+  rangeButtonTextActive: {
+    color: '#fff',
   },
   chartContainer: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: 10,
+    padding: 10,
     borderWidth: 1,
     borderColor: '#e9ecef',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  detailsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
-  },
-  detailCard: {
-    flex: 1,
-    minWidth: '48%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  detailLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#6c757d',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1a1a1a',
-  },
-  quickActionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#007bff',
-    gap: 6,
-  },
-  quickActionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  actionContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 24,
   },
 });
 
 export default function StockDetailScreen({ route, navigation }: StockDetailScreenProps) {
   const { symbol, name } = route.params;
   const { stocks, isLoading, error } = useAppStore();
-  const { lastKnownState, statusMessage, isOnline } = useSocket();
+  const {
+    lastKnownState,
+    statusMessage,
+    isOnline,
+    connectionStatus,
+    subscribe,
+    unsubscribe,
+  } = useSocket();
+
+  const [selectedRange, setSelectedRange] = React.useState<TimeRangeKey>('1D');
+  const [history, setHistory] = React.useState<StockChartPoint[]>([]);
 
   const matchingStock = React.useMemo(
     () => stocks.find((stock) => stock.symbol === symbol),
@@ -224,21 +162,80 @@ export default function StockDetailScreen({ route, navigation }: StockDetailScre
     if (isRealTimeUpdate(lastKnownState) && lastKnownState.symbol === symbol) {
       return lastKnownState.price;
     }
-
-    if (isStockList(lastKnownState)) {
-      const matched = lastKnownState.find((stock) => stock.symbol === symbol);
-      return matched?.price ?? null;
-    }
-
     return null;
   }, [lastKnownState, symbol]);
 
-  const baselinePrice = MOCK_BASELINE[symbol] ?? matchingStock?.price ?? 100;
-  const resolvedPrice = livePrice ?? matchingStock?.price ?? baselinePrice;
-  const priceChange = resolvedPrice - baselinePrice;
-  const priceChangePercent = (priceChange / baselinePrice) * 100;
-  const chartData = createChartSeries(resolvedPrice);
-  const details = MOCK_DETAILS[symbol];
+  const resolvedPrice = livePrice ?? matchingStock?.price ?? 0;
+  const intradayChange = typeof matchingStock?.change === 'number' ? matchingStock.change : 0;
+  const intradayChangePercent = typeof matchingStock?.changePercent === 'number' ? matchingStock.changePercent : 0;
+  const baselinePrice = resolvedPrice - intradayChange;
+
+  React.useEffect(() => {
+    setHistory([]);
+  }, [symbol]);
+
+  React.useEffect(() => {
+    if (!Number.isFinite(resolvedPrice) || resolvedPrice <= 0) {
+      return;
+    }
+
+    const nextPoint: StockChartPoint = {
+      timestamp: new Date().toISOString(),
+      price: Number(resolvedPrice.toFixed(2)),
+    };
+
+    setHistory((previous) => {
+      if (previous.length === 0) {
+        return [nextPoint];
+      }
+
+      const last = previous[previous.length - 1];
+      if (last.price === nextPoint.price) {
+        return previous;
+      }
+
+      return [...previous, nextPoint].slice(-1500);
+    });
+  }, [resolvedPrice]);
+
+  const chartData = React.useMemo(() => {
+    const selected = TIME_RANGES.find((range) => range.key === selectedRange);
+    const now = Date.now();
+    const allPoints = history.filter((point) => Number.isFinite(new Date(point.timestamp).getTime()));
+    const effectivePoints = selected?.durationMs
+      ? allPoints.filter((point) => (now - new Date(point.timestamp).getTime()) <= selected.durationMs!)
+      : allPoints;
+
+    if (effectivePoints.length >= 2) {
+      return effectivePoints;
+    }
+
+    if (resolvedPrice <= 0) {
+      return [];
+    }
+
+    const startTime = selected?.durationMs ? now - selected.durationMs : now - (60 * 60 * 1000);
+    return [
+      { timestamp: new Date(startTime).toISOString(), price: Number(resolvedPrice.toFixed(2)) },
+      { timestamp: new Date(now).toISOString(), price: Number(resolvedPrice.toFixed(2)) },
+    ];
+  }, [history, selectedRange, resolvedPrice]);
+
+  React.useEffect(() => {
+    if (
+      connectionStatus !== 'connected'
+      || typeof subscribe !== 'function'
+      || typeof unsubscribe !== 'function'
+    ) {
+      return undefined;
+    }
+
+    subscribe(symbol);
+
+    return () => {
+      unsubscribe(symbol);
+    };
+  }, [connectionStatus, subscribe, symbol, unsubscribe]);
 
   return (
     <View style={styles.container}>
@@ -247,103 +244,63 @@ export default function StockDetailScreen({ route, navigation }: StockDetailScre
           <Text style={styles.symbol}>{symbol}</Text>
           <Text style={styles.companyName}>{name ?? matchingStock?.name ?? 'Stock details'}</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
-          <Ionicons name="close-circle-outline" size={24} color="#6c757d" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 6 }}>
+          <Ionicons name="close-circle-outline" size={22} color="#6c757d" />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        {/* Price Section */}
         <View style={styles.priceSection}>
-          <View style={styles.priceContainer}>
+          <View style={styles.priceRow}>
             <Text style={styles.currentPrice}>${resolvedPrice.toFixed(2)}</Text>
-            <Text style={styles.priceSubtext}>
-              Current price {isOnline ? '(Live)' : '(Cached)'}
-            </Text>
-          </View>
-
-          <View style={styles.changeContainer}>
             <View
               style={[
                 styles.changeBadge,
-                priceChange < 0 && styles.changeBadgeNegative,
+                intradayChangePercent < 0 && styles.changeBadgeNegative,
               ]}
             >
               <Text
                 style={[
                   styles.changeText,
-                  priceChange < 0 && styles.changeTextNegative,
+                  intradayChangePercent < 0 && styles.changeTextNegative,
                 ]}
               >
-                {priceChange >= 0 ? '↑' : '↓'} {Math.abs(priceChange).toFixed(2)} (
-                {priceChangePercent.toFixed(2)}%)
+                {intradayChangePercent >= 0 ? '+' : ''}
+                {intradayChangePercent.toFixed(2)}% 24h
               </Text>
             </View>
-            <Text style={styles.statusText}>{statusMessage}</Text>
           </View>
+          <Text style={styles.metaText}>
+            {statusMessage} • {isOnline ? 'Online feed' : 'Fallback data'} • Updated {new Date().toLocaleTimeString()}
+          </Text>
         </View>
 
-        {/* Chart */}
-        {!isLoading && !error && (
-          <View style={styles.chartContainer}>
-            <StockChart
-              symbol={symbol}
-              data={chartData}
-              baselinePrice={baselinePrice}
-              isLoading={isLoading}
-              error={error}
-            />
-          </View>
-        )}
+        <View style={styles.rangeRow}>
+          {TIME_RANGES.map((range) => {
+            const isActive = selectedRange === range.key;
+            return (
+              <TouchableOpacity
+                key={range.key}
+                style={[styles.rangeButton, isActive && styles.rangeButtonActive]}
+                onPress={() => setSelectedRange(range.key)}
+              >
+                <Text style={[styles.rangeButtonText, isActive && styles.rangeButtonTextActive]}>
+                  {range.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        {isLoading && (
-          <View style={styles.chartContainer}>
-            <ActivityIndicator size="large" color="#007bff" />
-          </View>
-        )}
-
-        {error && (
-          <View style={styles.chartContainer}>
-            <Text style={{ color: '#dc3545', textAlign: 'center' }}>⚠️ {error}</Text>
-          </View>
-        )}
-
-        {/* Details Grid */}
-        {details && (
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>52-Week High</Text>
-              <Text style={styles.detailValue}>${details.high52w.toFixed(2)}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>52-Week Low</Text>
-              <Text style={styles.detailValue}>${details.low52w.toFixed(2)}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>Market Cap</Text>
-              <Text style={styles.detailValue}>{details.marketCap}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>Volume</Text>
-              <Text style={styles.detailValue}>{details.volume}</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Text style={styles.detailLabel}>P/E Ratio</Text>
-              <Text style={styles.detailValue}>{details.pe}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Quick Actions */}
-        <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.quickActionButton}>
-            <Ionicons name="add-circle-outline" size={16} color="#fff" />
-            <Text style={styles.quickActionButtonText}>Set Alert</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionButton}>
-            <Ionicons name="add-outline" size={16} color="#fff" />
-            <Text style={styles.quickActionButtonText}>Add to Watchlist</Text>
-          </TouchableOpacity>
+        <View style={styles.chartContainer}>
+          <StockChart
+            symbol={symbol}
+            data={chartData}
+            baselinePrice={baselinePrice}
+            isLoading={isLoading}
+            error={error}
+            rangeLabel={selectedRange}
+          />
         </View>
       </ScrollView>
     </View>

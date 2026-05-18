@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 
-function HomeScreen() {
+function HomeScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Real-Time Stock Alert</Text>
+        <Text style={styles.title}>Home Screen</Text>
         <Text style={styles.subtitle}>Monitor stock prices and set instant alerts</Text>
       </View>
 
@@ -21,6 +21,14 @@ function HomeScreen() {
           <Text style={styles.feature}>🔔 Alerts - Create and manage price alerts</Text>
           <Text style={styles.feature}>⚙️ Settings - Customize your preferences</Text>
         </View>
+
+        <TouchableOpacity
+          testID="go-to-watchlist"
+          onPress={() => navigation?.navigate('Watchlist')}
+          style={styles.watchlistButton}
+        >
+          <Text style={styles.watchlistButtonText}>Open Watchlist</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
@@ -89,7 +97,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  watchlistButton: {
+    marginTop: 12,
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  watchlistButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export default HomeScreen;
-

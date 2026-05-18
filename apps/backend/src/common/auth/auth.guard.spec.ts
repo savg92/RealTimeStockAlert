@@ -1,10 +1,16 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { FirebaseAuthService } from './firebase-auth.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('AuthGuard', () => {
   const authService = {
     verifyTokenAndSyncUser: jest.fn(),
+  };
+  const prisma = {
+    user: {
+      upsert: jest.fn(),
+    },
   };
 
   beforeEach(() => {
@@ -12,7 +18,7 @@ describe('AuthGuard', () => {
   });
 
   it('throws when the request has no bearer token', async () => {
-    const guard = new AuthGuard(authService as unknown as FirebaseAuthService);
+    const guard = new AuthGuard(authService as unknown as FirebaseAuthService, prisma as unknown as PrismaService);
     const context = {
       switchToHttp: () => ({
         getRequest: () => ({ headers: {} }),
@@ -30,7 +36,7 @@ describe('AuthGuard', () => {
       name: 'Test User',
     });
 
-    const guard = new AuthGuard(authService as unknown as FirebaseAuthService);
+    const guard = new AuthGuard(authService as unknown as FirebaseAuthService, prisma as unknown as PrismaService);
     const request: {
       headers: { authorization: string };
       user?: {

@@ -7,6 +7,13 @@ export interface PriceUpdate {
   price: number;
   timestamp: number;
   volume?: number;
+  change?: number;
+  changePercent?: number;
+}
+
+export interface HistoricalPricePoint {
+  timestamp: number;
+  price: number;
 }
 
 export interface ReconnectTelemetry {
@@ -347,12 +354,50 @@ export class FinnhubService implements OnModuleDestroy {
         return null;
       }
 
-      const data = await response.json() as { c: number; t: number };
+      async fetchCandlesViaRest(
+        symbol: string,
+        resolution: '1' | '5' | '15' | '60' | 'D' | 'W' | 'M',
+        from: number,
+        to: number,
+      ): Promise<HistoricalPricePoint[] | null> {
+        try {
+          const url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${this.apiKey}`;
+          const response = await fetch(url);
+
+          if (!response.ok) {
+            this.logger.error(`Failed to fetch candles for ${symbol}:`, response.statusText);
+            return null;
+          }
+
+          const data = await response.json() as { s: string; t?: number[]; c?: number[] };
+          if (data.s !== 'ok' || !Array.isArray(data.t) || !Array.isArray(data.c)) {
+            return null;
+          }
+
+          const points = data.t
+            .map((timestamp, index) => ({ timestamp, price: data.c?.[index] }))
+            .filter((point): point is { timestamp: number; price: number } => (
+              typeof point.timestamp === 'number'
+              && Number.isFinite(point.timestamp)
+              && typeof point.price === 'number'
+              && Number.isFinite(point.price)
+            ));
+
+          return points.length > 0 ? points : null;
+        } catch (error) {
+          this.logger.error(`Error fetching candles for ${symbol} via REST:`, error);
+          return null;
+        }
+      }
+
+      const data = await response.json() as { c: number; t: number; d?: number; dp?: number };
 
       return {
         symbol,
         price: data.c,
         timestamp: data.t,
+        change: typeof data.d === 'number' ? data.d : undefined,
+        changePercent: typeof data.dp === 'number' ? data.dp : undefined,
       };
     } catch (error) {
       this.logger.error(`Error fetching price for ${symbol} via REST:`, error);

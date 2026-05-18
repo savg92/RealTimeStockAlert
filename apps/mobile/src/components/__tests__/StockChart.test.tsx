@@ -23,7 +23,7 @@ describe('StockChart', () => {
       <StockChart symbol="AAPL" data={data} baselinePrice={100} />,
     );
 
-    expect(getByText('AAPL latest')).toBeTruthy();
+    expect(getByText('AAPL • 1D')).toBeTruthy();
     expect(getByText('$110.00')).toBeTruthy();
     expect(getByText('+10.00%')).toBeTruthy();
   });

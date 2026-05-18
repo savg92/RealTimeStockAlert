@@ -36,7 +36,7 @@ Firebase admin credentials (choose one):
 ### Mobile (`apps/mobile/.env.local`)
 
 - `EXPO_PUBLIC_API_URL` (default fallback in code: `http://localhost:3000`)
-- `EXPO_PUBLIC_SOCKET_URL` (default fallback in code: `ws://localhost:3000`)
+- `EXPO_PUBLIC_SOCKET_URL` (default fallback in code: `http://localhost:3000`; Android emulator uses `http://10.0.2.2:3000`)
 - `EXPO_PUBLIC_AUTH_BEARER_TOKEN` (optional; when unset, notification token sync becomes no-op)
 - `EXPO_PUBLIC_ENABLE_NOTIFICATIONS`
 - `EXPO_PUBLIC_ENABLE_OFFLINE_MODE`

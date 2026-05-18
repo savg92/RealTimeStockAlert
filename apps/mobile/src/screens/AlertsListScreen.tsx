@@ -148,9 +148,7 @@ export default function AlertsListScreen() {
           Active Alerts
         </Text>
         <TouchableOpacity onPress={loadAlerts} style={{ padding: 8 }}>
-          <Text style={{ fontWeight: '600', color: '#007bff', fontSize: 14 }}>
-            ↻ Refresh
-          </Text>
+          <Text style={{ fontWeight: '600', color: '#007bff', fontSize: 14 }}>Refresh</Text>
         </TouchableOpacity>
       </View>
 
@@ -183,9 +181,7 @@ export default function AlertsListScreen() {
             padding: 12
           }}
         >
-          <Text style={{ fontSize: 13, color: '#721c24', fontWeight: '500' }}>
-            ⚠️ {error}
-          </Text>
+          <Text style={{ fontSize: 13, color: '#721c24', fontWeight: '500' }}>{error}</Text>
         </View>
       )}
 
@@ -203,7 +199,7 @@ export default function AlertsListScreen() {
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: '600', color: '#004085', marginBottom: 8 }}>
-            📢 No alerts yet
+            No active alerts yet.
           </Text>
           <Text style={{ fontSize: 13, color: '#004085', textAlign: 'center', lineHeight: 18 }}>
             Create your first alert above to get notified when prices hit your target levels.
@@ -255,7 +251,7 @@ export default function AlertsListScreen() {
             </View>
             
             <Text style={{ fontSize: 13, color: '#6c757d', marginBottom: 12 }}>
-              Trigger when price reaches <Text style={{ fontWeight: '600', color: '#1a1a1a' }}>${alert.threshold.toFixed(2)}</Text>
+              Trigger when {alert.symbol} is {alert.condition} <Text style={{ fontWeight: '600', color: '#1a1a1a' }}>${alert.threshold.toFixed(2)}</Text>
             </Text>
 
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -270,9 +266,7 @@ export default function AlertsListScreen() {
                   alignItems: 'center',
                 }}
               >
-                <Text style={{ fontWeight: '600', color: '#dc3545', fontSize: 13 }}>
-                  🗑️ Delete
-                </Text>
+                <Text style={{ fontWeight: '600', color: '#dc3545', fontSize: 13 }}>Delete alert</Text>
               </TouchableOpacity>
             </View>
           </View>

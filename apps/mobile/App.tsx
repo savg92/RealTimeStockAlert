@@ -3,6 +3,7 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -99,7 +100,7 @@ export default function App() {
   const notificationsFeatureEnabled = process.env.EXPO_PUBLIC_ENABLE_NOTIFICATIONS !== 'false';
 
   React.useEffect(() => {
-    // Initialize app and hide splash screen
+    // Initialize app and ensure splash screen is hidden
     const initializeApp = async () => {
       try {
         // Perform initialization tasks here
@@ -112,13 +113,19 @@ export default function App() {
             shouldSetBadge: false,
           }),
         });
-        await SplashScreen.hideAsync();
       } catch (error) {
         console.error('Failed to initialize app:', error);
+      } finally {
+        // Always attempt to hide the splash screen so app remains interactive
+        try {
+          await SplashScreen.hideAsync();
+        } catch (hideError) {
+          console.warn('Failed to hide splash screen:', hideError);
+        }
       }
     };
 
-    initializeApp();
+    void initializeApp();
   }, []);
 
   React.useEffect(() => {
@@ -170,31 +177,33 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer
-        ref={navigationRef}
-        onReady={() => {
-          notificationRouterRef.current.handleReady();
-        }}
-      >
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <NavigationContainer
+          ref={navigationRef}
+          onReady={() => {
+            notificationRouterRef.current.handleReady();
           }}
         >
-          <Stack.Screen
-            name="HomeTabs"
-            component={TabNavigator}
-          />
-          <Stack.Screen
-            name="StockDetail"
-            component={StockDetailScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'StockDetail'>>}
-            options={({ route }) => ({ title: route.params.symbol, headerShown: true })}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-      <StatusBar />
-    </SafeAreaProvider>
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen
+              name="HomeTabs"
+              component={TabNavigator}
+            />
+            <Stack.Screen
+              name="StockDetail"
+              component={StockDetailScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'StockDetail'>>}
+              options={({ route }) => ({ title: route.params.symbol, headerShown: true })}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+        <StatusBar />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

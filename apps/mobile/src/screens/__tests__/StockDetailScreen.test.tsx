@@ -19,9 +19,13 @@ jest.mock('../../components/StockChart', () => {
 describe('StockDetailScreen', () => {
   const mockedUseAppStore = useAppStore as jest.Mock;
   const mockedUseSocket = useSocket as jest.Mock;
+  let subscribe: jest.Mock;
+  let unsubscribe: jest.Mock;
 
   beforeEach(() => {
     lastStockChartProps = undefined;
+    subscribe = jest.fn();
+    unsubscribe = jest.fn();
 
     mockedUseAppStore.mockReturnValue({
       stocks: [
@@ -46,32 +50,41 @@ describe('StockDetailScreen', () => {
       lastKnownState: { symbol: 'AAPL', price: 191, change: 0, changePercent: 0, timestamp: new Date() },
       statusMessage: 'Connected',
       isOnline: true,
+      connectionStatus: 'connected',
+      subscribe,
+      unsubscribe,
     });
   });
 
   it('renders live data from the socket feed', () => {
-    const { getByText } = render(
+    const { getByText, unmount } = render(
       <StockDetailScreen route={{ params: { symbol: 'AAPL', name: 'Apple Inc.' } }} navigation={{}} />,
     );
 
     expect(getByText('AAPL')).toBeTruthy();
     expect(getByText('Apple Inc.')).toBeTruthy();
-    expect(getByText('Connected • Online feed')).toBeTruthy();
+    expect(getByText(/\+0\.00% 24h/)).toBeTruthy();
+    expect(subscribe).toHaveBeenCalledWith('AAPL');
     expect(lastStockChartProps.symbol).toBe('AAPL');
-    expect(lastStockChartProps.baselinePrice).toBe(188.5);
+    expect(lastStockChartProps.baselinePrice).toBe(191);
     expect(lastStockChartProps.isLoading).toBe(false);
     expect(lastStockChartProps.error).toBeNull();
-    expect(lastStockChartProps.data[0].price).toBe(Number((191 * 0.992).toFixed(2)));
+    expect(lastStockChartProps.rangeLabel).toBe('1D');
+    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(2);
+
+    unmount();
+
+    expect(unsubscribe).toHaveBeenCalledWith('AAPL');
   });
 
   it('uses stock-list cache data and falls back to the stored name', () => {
     mockedUseSocket.mockReturnValue({
-      lastKnownState: [
-        { symbol: 'AAPL', price: 204 },
-        { symbol: 'MSFT', price: 250 },
-      ],
+      lastKnownState: null,
       statusMessage: 'Disconnected',
       isOnline: false,
+      connectionStatus: 'disconnected',
+      subscribe,
+      unsubscribe,
     });
 
     const { getByText } = render(
@@ -79,9 +92,9 @@ describe('StockDetailScreen', () => {
     );
 
     expect(getByText('Microsoft Corp.')).toBeTruthy();
-    expect(getByText('Disconnected • Fallback data')).toBeTruthy();
-    expect(lastStockChartProps.baselinePrice).toBe(409.8);
-    expect(lastStockChartProps.data[0].price).toBe(Number((250 * 0.992).toFixed(2)));
+    expect(getByText(/\+0\.00% 24h/)).toBeTruthy();
+    expect(lastStockChartProps.baselinePrice).toBe(412.3);
+    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(2);
   });
 
   it('falls back to the default baseline when no stock matches', () => {
@@ -94,34 +107,37 @@ describe('StockDetailScreen', () => {
       lastKnownState: { unexpected: true },
       statusMessage: 'Offline',
       isOnline: false,
+      connectionStatus: 'offline',
+      subscribe,
+      unsubscribe,
     });
 
     const { getByText } = render(<StockDetailScreen route={{ params: { symbol: 'XYZ' } }} navigation={{}} />);
 
     expect(getByText('Stock details')).toBeTruthy();
-    expect(getByText('Offline • Fallback data')).toBeTruthy();
-    expect(lastStockChartProps.baselinePrice).toBe(100);
+    expect(getByText('+0.00% 24h')).toBeTruthy();
+    expect(lastStockChartProps.baselinePrice).toBe(0);
     expect(lastStockChartProps.isLoading).toBe(true);
     expect(lastStockChartProps.error).toBe('Network down');
-    expect(lastStockChartProps.data[0].price).toBe(Number((100 * 0.992).toFixed(2)));
+    expect(lastStockChartProps.data).toEqual([]);
   });
 
-  it('falls back to the store price when stock list cache has no matching symbol', () => {
+  it('falls back to the store price when no live update exists', () => {
     mockedUseSocket.mockReturnValue({
-      lastKnownState: [
-        { symbol: 'GOOGL', price: 400 },
-        { symbol: 'TSLA', price: 300 },
-      ],
+      lastKnownState: null,
       statusMessage: 'Disconnected',
       isOnline: false,
+      connectionStatus: 'disconnected',
+      subscribe,
+      unsubscribe,
     });
 
     const { getByText } = render(
       <StockDetailScreen route={{ params: { symbol: 'AAPL', name: 'Apple Inc.' } }} navigation={{}} />,
     );
 
-    expect(getByText('Disconnected • Fallback data')).toBeTruthy();
-    expect(lastStockChartProps.baselinePrice).toBe(188.5);
-    expect(lastStockChartProps.data[0].price).toBe(Number((189 * 0.992).toFixed(2)));
+    expect(getByText('+0.00% 24h')).toBeTruthy();
+    expect(lastStockChartProps.baselinePrice).toBe(189);
+    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(2);
   });
 });

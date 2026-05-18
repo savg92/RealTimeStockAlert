@@ -13,6 +13,7 @@ interface StockChartProps {
   baselinePrice?: number;
   isLoading?: boolean;
   error?: string | null;
+  rangeLabel?: string;
 }
 
 const formatTimeLabel = (timestamp: string): string => {
@@ -29,6 +30,7 @@ export default function StockChart({
   baselinePrice,
   isLoading = false,
   error = null,
+  rangeLabel = '1D',
 }: StockChartProps) {
   if (isLoading) {
     return (
@@ -66,13 +68,13 @@ export default function StockChart({
     label: index === 0 || index === data.length - 1 ? formatTimeLabel(point.timestamp) : '',
   }));
 
-  const chartWidth = Math.max(Dimensions.get('window').width - 96, 220);
+  const chartWidth = Math.max(Dimensions.get('window').width - 78, 220);
 
   return (
-    <View className="rounded-lg border border-border bg-background-secondary p-4">
-      <View className="mb-4 flex-row items-end justify-between">
+    <View className="rounded-lg border border-border bg-background-secondary p-3">
+      <View className="mb-2 flex-row items-end justify-between">
         <View>
-          <Text className="text-sm text-text-secondary">{symbol} latest</Text>
+          <Text className="text-xs text-text-secondary">{symbol} • {rangeLabel}</Text>
           <Text className="text-2xl font-bold text-text">${latestPrice.toFixed(2)}</Text>
         </View>
         <Text style={{ color: positiveChange ? '#10B981' : '#EF4444' }}>
@@ -80,12 +82,15 @@ export default function StockChart({
           {deltaPercent.toFixed(2)}%
         </Text>
       </View>
+      <Text className="mb-2 text-xs text-text-secondary">
+        Device time ({new Date().toLocaleTimeString()})
+      </Text>
 
       <LineChart
         areaChart
         data={chartData}
         width={chartWidth}
-        height={180}
+        height={160}
         spacing={Math.max(16, Math.floor(chartWidth / (data.length + 1)))}
         color={positiveChange ? '#10B981' : '#EF4444'}
         startFillColor={positiveChange ? '#10B981' : '#EF4444'}

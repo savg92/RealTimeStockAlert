@@ -1,7 +1,13 @@
+import { Platform } from 'react-native';
+
 // API configuration and endpoints
+const LOCAL_API_BASE_URL = Platform.OS === 'android'
+  ? 'http://10.0.2.2:3000'
+  : 'http://localhost:3000';
+
 export const API_CONFIG = {
-  BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || 'ws://localhost:3000',
+  BASE_URL: process.env.EXPO_PUBLIC_API_URL || LOCAL_API_BASE_URL,
+  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || LOCAL_API_BASE_URL,
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,

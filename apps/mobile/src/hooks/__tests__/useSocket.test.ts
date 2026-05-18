@@ -191,7 +191,7 @@ describe('useSocket', () => {
         await result.current.fetchPricesViaRest();
       });
 
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:3000/api/stocks/prices');
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:3000/stocks/prices');
       expect(result.current.lastKnownState).toEqual(prices);
     });
   });
