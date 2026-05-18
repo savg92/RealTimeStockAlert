@@ -23,7 +23,7 @@ A production-ready, full-stack mobile application for real-time stock price trac
 
 ### Prerequisites
 
-- **Bun** >= 1.0 ([install](https://bun.sh))
+- **Bun** >= 1.0 ([install](https://bun.sh)) or Node.js + npm
 - **Docker** + **Docker Compose** (for PostgreSQL and Redis)
 - **Finnhub API key** (free tier at [finnhub.io](https://finnhub.io))
 - **Firebase credentials** (optional for local dev, required for production notifications)
