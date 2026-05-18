@@ -4,8 +4,10 @@
 - Get the `mobile` app running locally on an Android Studio emulator with the Expo dev client.
 
 ## Current state
-- The Android app now boots into a minimal bootstrap screen.
-- `npm run dev` and `npm run android` first try to start an emulator, then launch Expo.
+- The Android app boots into a minimal bootstrap screen.
+- `npm run dev` and `npm run android` now auto-uninstall old versions to avoid signature conflicts.
+- Build succeeds and APK installs to the emulator.
+- Metro bundler runs and QR code is available for connecting the development build.
 - `expo-linear-gradient` and the monorepo Metro config remain in place for when the full app is reintroduced.
 
 ## Prerequisites

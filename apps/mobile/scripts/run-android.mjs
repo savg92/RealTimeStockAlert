@@ -125,6 +125,14 @@ const main = async () => {
   await startEmulatorIfNeeded();
 
   if (mode === 'dev') {
+    // Uninstall old app to avoid signature mismatch errors
+    console.log('Checking for existing installation...');
+    try {
+      run(adb, ['-s', 'emulator-5554', 'uninstall', 'com.stockalert.mobile']);
+    } catch (e) {
+      // Ignore error if app not installed
+    }
+
     const install = spawn('npx', ['--yes', 'expo', 'run:android'], {
       stdio: 'inherit',
       env: commandEnv,
