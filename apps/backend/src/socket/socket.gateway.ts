@@ -15,7 +15,9 @@ import { PriceSubscriberService, type PriceTick } from '../redis/price-subscribe
 @WebSocketGateway({
   cors: {
     origin: '*',
+    methods: ['GET', 'POST'],
   },
+  transports: ['websocket', 'polling'],
 })
 export class StockGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
