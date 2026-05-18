@@ -15,6 +15,7 @@ build/
 .expo/
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+*.apk
 
 # Environment files
 .env
