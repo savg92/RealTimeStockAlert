@@ -34,6 +34,9 @@ A production-ready, full-stack mobile application for real-time stock price trac
    ```bash
    bun install
    ```
+   ```
+   npm install
+   ```
 
 2. **Configure environment:**
    ```bash
@@ -51,10 +54,17 @@ A production-ready, full-stack mobile application for real-time stock price trac
    ```bash
    bun run dev
    ```
+   ```
+   npm run dev
+   ```
    Or separately:
    ```bash
    bun run dev:backend    # NestJS on http://localhost:3000
    bun run dev:mobile     # Expo on http://localhost:19000
+   ```
+   ```
+   npm run dev:backend
+   npm run dev:mobile
    ```
 
 5. **Verify:**
