@@ -47,11 +47,7 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.startListening();
     } catch (error) {
-      this.health.lastError = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Failed to start Redis subscription for ${this.channel}`,
-        error instanceof Error ? error.stack : undefined,
-      );
+      this.handleStartupFailure(error);
     }
   }
 
@@ -98,6 +94,18 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
 
     await this.redis.connect();
     this.health.connected = true;
+  }
+
+  private handleStartupFailure(error: unknown): void {
+    const message =
+      error instanceof Error
+        ? error.message || error.stack?.split('\n')[0] || String(error)
+        : String(error);
+    this.health.lastError = message;
+
+    this.logger.warn(
+      `[${PriceSubscriberService.name}] Redis subscription for ${this.channel} is unavailable at startup: ${message}`,
+    );
   }
 
   private handleRedisMessage(message: string): void {
