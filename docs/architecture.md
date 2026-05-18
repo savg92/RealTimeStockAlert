@@ -15,15 +15,15 @@
 │         │ (REST fallback                 │  - Health/Readiness probes   │   │
 │         │  after 5 failures)             │  - Swagger/OpenAPI @ /docs   │   │
 │         │                                └────────────┬─────────────────┘   │
-│         │                                             │                     │
+│         │                                            │                      │
 │         └─────────────────┬──────────────────────────┼─────────────────┐    │
 │                           │                          │                 │    │
 │                      ┌────▼─────┐            ┌───────▼──────┐    ┌────▼──┐  │
 │                      │  Redis   │            │  PostgreSQL  │    │FCM    │  │
 │                      │(Pub/Sub) │            │  (Auth,      │    │ (Push)│  │
 │                      │          │            │   Alerts,    │    │       │  │
-│                      └────┬─────┘            │   Dispatch,  │    └───────┘  │
-│                           │                  │   Tokens)    │          │   │
+│                      └────┬─────┘            │   Dispatch,  │    └────┬──┘  │
+│                           │                  │   Tokens)    │         │     │
 │                           │                  └──────────────┘         │     │
 │     ┌─────────────────────┘                                           │     │
 │     │                                                                 │     │
@@ -31,7 +31,7 @@
 │  │   MOBILE (Expo React Native)            │                          │     │
 │  │ ┌──────────────────────────────────────┐│                          │     │
 │  │ │ • Watchlist Screen (live prices)     ││                          │     │
-│  │ │ • Alerts Screen (CRUD + updates)     ││                          │    │
+│  │ │ • Alerts Screen (CRUD + updates)     ││                          │     │
 │  │ │ • Stock Detail + Chart               ││  ◀───────────────────────┘     │
 │  │ │ • Settings (token sync)              ││                                │
 │  │ │ • Socket.io client (subscribe/recv)  ││                                │
