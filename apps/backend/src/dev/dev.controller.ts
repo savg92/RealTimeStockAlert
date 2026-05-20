@@ -192,6 +192,180 @@ export class DevController {
     };
   }
 
+  /** Execute a predefined test scenario */
+  @Post('scenario/:name')
+  async runTestScenario(
+    @Param('name') name: string,
+    @Body() body: { symbol?: string; prices?: number[] } = {},
+  ) {
+    this.throwIfNotDev();
+
+    const results: any[] = [];
+    const symbol = (body.symbol || 'AAPL').toUpperCase();
+    const basePrice = 150;
+
+    switch (name) {
+      case 'basic-alert-flow': {
+        // 1. Add stock to watchlist
+        await this.watchlist.addItem(this.testUserId, symbol, symbol);
+        results.push({ step: 'add-watchlist', symbol, success: true });
+
+        // 2. Create alert above price
+        const alert = await this.alerts.createAlert(this.testUserId, {
+          symbol,
+          price: basePrice,
+          condition: 'above',
+          threshold: basePrice,
+        });
+        results.push({ step: 'create-alert', alertId: alert.id, condition: 'above', threshold: basePrice });
+
+        // 3. Trigger price update
+        await this.alertEngine.processPriceTick({
+          symbol,
+          price: basePrice + 5,
+          timestamp: Date.now(),
+        } as any);
+        results.push({ step: 'trigger-price', symbol, price: basePrice + 5, triggered: true });
+
+        // 4. List dispatches
+        const dispatches = await this.prisma.alertDispatch.findMany({
+          where: { userId: this.testUserId, symbol },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        });
+        results.push({ step: 'check-dispatches', count: dispatches.length, dispatches });
+
+        return { scenario: name, results };
+      }
+
+      case 'multi-alert-cascade': {
+        // Create multiple alerts with different thresholds and trigger them all
+        const thresholds = [145, 150, 155];
+        const alerts = [];
+
+        for (const threshold of thresholds) {
+          const alert = await this.alerts.createAlert(this.testUserId, {
+            symbol,
+            price: threshold,
+            condition: 'above',
+            threshold,
+          });
+          alerts.push({ alertId: alert.id, threshold });
+        }
+        results.push({ step: 'create-alerts', count: alerts.length, alerts });
+
+        // Trigger prices that match different alerts
+        const testPrices = body.prices || [148, 152, 157];
+        for (const price of testPrices) {
+          await this.alertEngine.processPriceTick({
+            symbol,
+            price,
+            timestamp: Date.now(),
+          } as any);
+          results.push({ step: 'trigger-price', price, triggered: true });
+        }
+
+        // Get all dispatches
+        const dispatches = await this.prisma.alertDispatch.findMany({
+          where: { userId: this.testUserId, symbol },
+          orderBy: { createdAt: 'desc' },
+        });
+        results.push({ step: 'final-dispatches', count: dispatches.length });
+
+        return { scenario: name, results };
+      }
+
+      case 'price-volatility': {
+        // Create both above and below alerts, then oscillate prices
+        const aboveAlert = await this.alerts.createAlert(this.testUserId, {
+          symbol,
+          price: 152,
+          condition: 'above',
+          threshold: 152,
+        });
+        const belowAlert = await this.alerts.createAlert(this.testUserId, {
+          symbol,
+          price: 148,
+          condition: 'below',
+          threshold: 148,
+        });
+        results.push({
+          step: 'create-alerts',
+          above: { alertId: aboveAlert.id, threshold: 152 },
+          below: { alertId: belowAlert.id, threshold: 148 },
+        });
+
+        // Oscillate prices
+        const prices = [155, 145, 158, 142, 160];
+        for (const price of prices) {
+          await this.alertEngine.processPriceTick({
+            symbol,
+            price,
+            timestamp: Date.now(),
+          } as any);
+        }
+        results.push({ step: 'trigger-prices', prices, count: prices.length });
+
+        // Get final dispatch summary
+        const dispatches = await this.prisma.alertDispatch.findMany({
+          where: { userId: this.testUserId, symbol },
+          orderBy: { createdAt: 'desc' },
+        });
+        results.push({ step: 'final-dispatches', count: dispatches.length });
+
+        return { scenario: name, results };
+      }
+
+      case 'watchlist-tracking': {
+        // Add multiple stocks and create alerts for each
+        const stocks = [symbol, 'GOOGL', 'MSFT', 'TSLA'];
+        const createdAlerts = [];
+
+        for (const stock of stocks) {
+          await this.watchlist.addItem(this.testUserId, stock, stock);
+          const alert = await this.alerts.createAlert(this.testUserId, {
+            symbol: stock,
+            price: basePrice,
+            condition: 'above',
+            threshold: basePrice,
+          });
+          createdAlerts.push({ symbol: stock, alertId: alert.id });
+        }
+        results.push({ step: 'create-multi-watchlist', stocks: createdAlerts.length, items: createdAlerts });
+
+        // Trigger some prices
+        for (const stock of stocks.slice(0, 3)) {
+          await this.alertEngine.processPriceTick({
+            symbol: stock,
+            price: basePrice + 10,
+            timestamp: Date.now(),
+          } as any);
+        }
+        results.push({ step: 'trigger-prices', count: 3 });
+
+        // Get watchlist and dispatches
+        const watchlist = await this.watchlist.listForUser(this.testUserId);
+        const dispatches = await this.prisma.alertDispatch.findMany({
+          where: { userId: this.testUserId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        });
+        results.push({
+          step: 'final-status',
+          watchlistItems: watchlist.length,
+          dispatches: dispatches.length,
+        });
+
+        return { scenario: name, results };
+      }
+
+      default:
+        throw new ForbiddenException(
+          `Unknown scenario: ${name}. Available: basic-alert-flow, multi-alert-cascade, price-volatility, watchlist-tracking`,
+        );
+    }
+  }
+
   /** Clear all test data */
   @Delete('reset')
   async resetTestData() {
@@ -208,5 +382,23 @@ export class DevController {
       message: 'Test data cleared',
       deleted,
     };
+  }
+
+  /** Get WebSocket event log from Finnhub service */
+  @Get('ws-events')
+  async getWebSocketEvents() {
+    this.throwIfNotDev();
+    return {
+      events: this.finnhub.getWebSocketEventLog(),
+      count: this.finnhub.getWebSocketEventLog().length,
+    };
+  }
+
+  /** Clear WebSocket event log */
+  @Delete('ws-events')
+  async clearWebSocketEvents() {
+    this.throwIfNotDev();
+    this.finnhub.clearWebSocketEventLog();
+    return { message: 'WebSocket event log cleared' };
   }
 }

@@ -53,6 +53,10 @@ export class FinnhubService implements OnModuleDestroy {
   private restFallbackSymbols = new Set<string>();
   private restPollInterval: NodeJS.Timeout | null = null;
 
+  // WebSocket event logging for debugging
+  private wsEventLog: Array<{ type: string; data: any; timestamp: number }> = [];
+  private readonly WS_EVENT_LOG_SIZE = 100;
+
   // Retry configuration
   private readonly MAX_RETRY_ATTEMPTS = 5;
   private readonly MAX_BACKOFF_MS = 30000; // 30 seconds
@@ -170,6 +174,7 @@ export class FinnhubService implements OnModuleDestroy {
           timestamp: trade.t,
           volume: trade.v,
         };
+        this.logWebSocketEvent('trade', { symbol: trade.s, price: trade.p, volume: trade.v });
         this.emitPriceUpdate(update);
       }
     } else if (message.type === 'ping') {
@@ -179,6 +184,7 @@ export class FinnhubService implements OnModuleDestroy {
 
   private handleHeartbeat(): void {
     this.recordHeartbeat();
+    this.logWebSocketEvent('heartbeat', {});
     this.sendMessage({ type: 'pong' });
   }
 
@@ -335,6 +341,29 @@ export class FinnhubService implements OnModuleDestroy {
       ...(false as true ? { fallbackPollingActive } : {}),
       ...(false as true ? { maxBackoffMs } : {}),
     };
+  }
+
+  private logWebSocketEvent(type: string, data: any): void {
+    const event = { type, data, timestamp: Date.now() };
+    this.wsEventLog.push(event);
+
+    // Keep log size manageable
+    if (this.wsEventLog.length > this.WS_EVENT_LOG_SIZE) {
+      this.wsEventLog.shift();
+    }
+
+    // Log to logger in development for debugging
+    if (process.env.NODE_ENV === 'development' && type !== 'heartbeat') {
+      this.logger.debug(`WebSocket event: ${type}`, data);
+    }
+  }
+
+  getWebSocketEventLog(): Array<{ type: string; data: any; timestamp: number }> {
+    return [...this.wsEventLog];
+  }
+
+  clearWebSocketEventLog(): void {
+    this.wsEventLog = [];
   }
 
   async enableRestFallback(): Promise<void> {
