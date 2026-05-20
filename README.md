@@ -167,6 +167,13 @@ From repository root:
 - `DELETE /notifications/token/:token` — revoke push token
 - `POST /notifications/test` — send test notification
 
+**Development (testing without live market data):**
+
+- `POST /dev/scenario/:name` — run predefined test scenario (basic-alert-flow, multi-alert-cascade, price-volatility, watchlist-tracking)
+- `GET /dev/ws-events` — view recent Finnhub WebSocket events
+- `DELETE /dev/ws-events` — clear WebSocket event log
+- `POST /dev/dispatch-history` — query alert dispatch records with filtering
+
 **Documentation:**
 
 - `GET /docs` — Swagger UI (interactive API explorer)

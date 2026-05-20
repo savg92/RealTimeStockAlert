@@ -488,6 +488,158 @@ All request bodies are validated using NestJS class-validator decorators (define
 
 Invalid inputs return `400 Bad Request` with validation error messages.
 
+## Development & Testing Endpoints
+
+These endpoints are only available in development mode and are useful for testing and debugging without live market data.
+
+### Dev Testing Scenarios
+
+#### POST /dev/scenario/:name
+
+Execute a predefined test scenario to verify the alert pipeline end-to-end without manual action.
+
+**Path parameters:**
+
+- `name: string` — scenario name; one of:
+  - `basic-alert-flow` — Create alert, trigger price, verify dispatch
+  - `multi-alert-cascade` — Create 3 alerts, trigger subset, verify dispatch
+  - `price-volatility` — Trigger rapid price changes, verify alert matching
+  - `watchlist-tracking` — Add/remove stocks, verify Finnhub subscription changes
+
+**Response (200 OK):**
+
+```json
+{
+  "scenario": "basic-alert-flow",
+  "steps": [
+    { "step": 1, "action": "Create watchlist item", "symbol": "TEST_SYMBOL", "status": "ok" },
+    { "step": 2, "action": "Create alert", "condition": "above", "threshold": 100, "status": "ok" },
+    { "step": 3, "action": "Publish price", "price": 105, "status": "ok" },
+    { "step": 4, "action": "Verify dispatch", "dispatchCount": 1, "status": "ok" }
+  ],
+  "success": true
+}
+```
+
+**Use case:** Verify alert triggering logic works without needing live Finnhub data.
+
+### WebSocket Event Logging
+
+#### GET /dev/ws-events
+
+Get recent WebSocket events from Finnhub connection.
+
+**Response (200 OK):**
+
+```json
+{
+  "events": [
+    {
+      "type": "trade",
+      "symbol": "AAPL",
+      "price": 150.25,
+      "timestamp": "2026-05-19T23:30:00.000Z"
+    },
+    {
+      "type": "heartbeat",
+      "timestamp": "2026-05-19T23:29:55.000Z"
+    }
+  ],
+  "count": 2,
+  "maxSize": 100
+}
+```
+
+**Fields:**
+
+- `type` — `trade` (price update) or `heartbeat` (connection keepalive)
+- `symbol` — stock ticker (only for trade events)
+- `price` — updated price (only for trade events)
+- `timestamp` — ISO 8601 timestamp
+
+**Use case:** Debug Finnhub connection health and event flow.
+
+#### DELETE /dev/ws-events
+
+Clear the WebSocket event log buffer.
+
+**Response (200 OK):**
+
+```json
+{
+  "cleared": true
+}
+```
+
+**Use case:** Reset event log before testing a specific scenario.
+
+### Alert Dispatch History
+
+#### POST /dev/dispatch-history
+
+Query alert dispatch records with optional filtering.
+
+**Request:**
+
+```json
+{
+  "symbol": "AAPL",
+  "status": "sent",
+  "limit": 50
+}
+```
+
+**Request fields (all optional):**
+
+- `symbol: string` — filter by stock symbol
+- `status: 'sent' | 'failed' | 'pending' | 'skipped'` — filter by delivery status
+- `limit: number` — max records to return (default: 50)
+
+**Response (200 OK):**
+
+```json
+{
+  "dispatches": [
+    {
+      "id": "dispatch-uuid",
+      "symbol": "AAPL",
+      "deliveryStatus": "sent",
+      "triggerPrice": 150.25,
+      "triggerAt": "2026-05-19T23:30:00.000Z",
+      "createdAt": "2026-05-19T23:30:01.000Z",
+      "alert": {
+        "id": "alert-uuid",
+        "condition": "above",
+        "threshold": 150.0
+      }
+    }
+  ],
+  "summary": {
+    "AAPL": {
+      "sent": 5,
+      "failed": 0,
+      "pending": 0,
+      "skipped": 1
+    }
+  },
+  "count": 1,
+  "filters": {
+    "symbol": "AAPL",
+    "status": "sent",
+    "limit": 50
+  }
+}
+```
+
+**Response fields:**
+
+- `dispatches[]` — filtered alert dispatch records
+- `summary` — aggregated count by symbol and status
+- `count` — number of records returned
+- `filters` — applied filter parameters
+
+**Use case:** Review alert dispatch history, troubleshoot delivery issues, verify alert triggers.
+
 ## Swagger Integration
 
 Backend exposes OpenAPI schema at:

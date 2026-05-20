@@ -32,6 +32,7 @@
 │  │ ┌──────────────────────────────────────┐│                          │     │
 │  │ │ • Watchlist Screen (live prices)     ││                          │     │
 │  │ │ • Alerts Screen (CRUD + updates)     ││                          │     │
+│  │ │ • Alert History (dispatch logs)      ││                          │     │
 │  │ │ • Stock Detail + Chart               ││  ◀───────────────────────┘     │
 │  │ │ • Settings (token sync)              ││                                │
 │  │ │ • Socket.io client (subscribe/recv)  ││                                │
@@ -98,6 +99,40 @@
 
 - Health: `GET /health`
 - Readiness: `GET /ready`
+- Swagger UI: `GET /docs` (all endpoints, request/response examples)
+- WebSocket event logs: `GET /dev/ws-events` (Finnhub connection debugging)
+
+## Development Testing Infrastructure
+
+Development mode includes several testing utilities to validate the alert pipeline without live market data:
+
+### Test Scenarios
+Predefined flows that execute end-to-end alert logic:
+
+- **basic-alert-flow**: Create watchlist item → create alert → publish price → verify dispatch
+- **multi-alert-cascade**: Create 3 alerts on same symbol → trigger subset → verify all affected alerts dispatch
+- **price-volatility**: Trigger rapid price changes → verify alert matching and deduplication
+- **watchlist-tracking**: Add/remove stocks → verify Finnhub subscription/unsubscription
+
+### WebSocket Event Logging
+Buffer of recent Finnhub price updates and heartbeats for debugging connection health and event flow.
+
+### Dispatch History API
+Query interface for alert dispatch records with optional filtering by symbol, status, and limit.
+
+## Mobile UI Flow
+
+1. **Stock Detail Screen** → Click "Create Alert" button (passes `symbol` to alerts screen via navigation params)
+2. **Alerts Screen** → Opens with symbol pre-filled (if navigated from stock detail)
+   - User sets condition (above/below) and threshold
+   - Submits form → POST /alerts with symbol, condition, threshold
+3. **Alert History Screen** → View all alert dispatches with:
+   - Symbol filtering (dynamically populated from data)
+   - Status filtering (sent, failed, pending, skipped)
+   - Summary statistics (total sent/failed per symbol)
+   - Pull-to-refresh integration
+
+Navigation uses React Navigation with root stack (StockDetailScreen) + tab navigator (Alerts, Watchlist). Symbol passing navigates via: `navigate('HomeTabs', { screen: 'Alerts', params: { symbol } })`
 - Structured logging via Pino logger
 - Request correlation via request-id middleware
 
