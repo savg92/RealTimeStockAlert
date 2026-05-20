@@ -14,6 +14,8 @@ export interface StockDetailSnapshot {
   marketCap: string;
   volume: string;
   pe: number;
+  change?: number;
+  changePercent?: number;
 }
 
 export const STOCK_DETAILS_BASE: Record<string, StockDetailSnapshot> = {

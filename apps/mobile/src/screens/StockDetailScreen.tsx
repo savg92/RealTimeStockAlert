@@ -21,6 +21,8 @@ interface StockDetailSnapshot {
   marketCap?: number | string;
   volume?: number | string;
   pe?: number | null;
+  change?: number;
+  changePercent?: number;
 }
 
 const TIME_RANGES: Array<{ key: TimeRangeKey; label: string; durationMs?: number }> = [
@@ -274,21 +276,36 @@ export default function StockDetailScreen({ route, navigation }: StockDetailScre
     const allPoints = history.filter((point) =>
       Number.isFinite(new Date(point.timestamp).getTime()),
     );
-    const effectivePoints = selected?.durationMs
+    let effectivePoints = selected?.durationMs
       ? allPoints.filter(
           (point) => now - new Date(point.timestamp).getTime() <= selected.durationMs!,
         )
       : allPoints;
+
+    // Fallback: if filtering results in no points (e.g. market closed),
+    // show the most recent available data for that range
+    if (effectivePoints.length === 0 && allPoints.length > 0) {
+      if (selectedRange === '1H') {
+        effectivePoints = allPoints.slice(-60);
+      } else if (selectedRange === '5H') {
+        effectivePoints = allPoints.slice(-300);
+      } else {
+        effectivePoints = allPoints;
+      }
+    }
 
     return effectivePoints;
   }, [history, selectedRange]);
 
   const chartLatestPrice = chartData.at(-1)?.price ?? referencePrice ?? 0;
   const chartBaselinePrice = chartData[0]?.price ?? referencePrice ?? 0;
-  const chartChangePercent =
-    chartBaselinePrice === 0
+  
+  // Use Finnhub-provided change percentage for the "24h" label if available
+  const displayChangePercent = details?.changePercent ?? 
+    (chartBaselinePrice === 0
       ? 0
-      : ((chartLatestPrice - chartBaselinePrice) / chartBaselinePrice) * 100;
+      : ((chartLatestPrice - chartBaselinePrice) / chartBaselinePrice) * 100);
+
   const chartError =
     error ??
     (!hasReferencePrice || chartData.length === 0
@@ -329,13 +346,13 @@ export default function StockDetailScreen({ route, navigation }: StockDetailScre
             <View style={styles.priceRow}>
               <Text style={styles.currentPrice}>${chartLatestPrice.toFixed(2)}</Text>
               <View
-                style={[styles.changeBadge, chartChangePercent < 0 && styles.changeBadgeNegative]}
+                style={[styles.changeBadge, displayChangePercent < 0 && styles.changeBadgeNegative]}
               >
                 <Text
-                  style={[styles.changeText, chartChangePercent < 0 && styles.changeTextNegative]}
+                  style={[styles.changeText, displayChangePercent < 0 && styles.changeTextNegative]}
                 >
-                  {chartChangePercent >= 0 ? '+' : ''}
-                  {chartChangePercent.toFixed(2)}% 24h
+                  {displayChangePercent >= 0 ? '+' : ''}
+                  {displayChangePercent.toFixed(2)}% 24h
                 </Text>
               </View>
             </View>

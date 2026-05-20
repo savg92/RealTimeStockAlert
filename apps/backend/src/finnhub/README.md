@@ -4,11 +4,13 @@ A robust NestJS service for connecting to the Finnhub WebSocket API and receivin
 
 ## Features
 
+- **Dual-Source Data Integration**: Sourced real-time ticks from Finnhub (WebSocket) and reliable historical candles from Yahoo Finance (REST).
 - **WebSocket Connection**: Maintains a persistent connection to Finnhub with automatic reconnection
 - **Exponential Backoff Retry**: Implements exponential backoff with jitter for failed connection attempts
 - **Heartbeat Detection**: Monitors connection health with periodic heartbeat checks
 - **Price Message Parsing**: Handles incoming trade messages and emits structured price updates
-- **REST Fallback**: Falls back to REST API polling if WebSocket is unavailable
+- **REST Fallback**: Falls back to REST API polling for quotes if WebSocket is unavailable
+- **Advanced Financial Metrics**: Fetches and formats 52w High/Low, Market Cap (B/T), Volume (K/M), and P/E ratios.
 - **Subscription Management**: Track and manage symbol subscriptions
 - **Reconnect Telemetry**: Provides detailed metrics on reconnection attempts and failures
 

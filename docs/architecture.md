@@ -12,12 +12,11 @@
 │  │  Market Prices   │                    │  - Ingestion                 │   │
 │  └──────────────────┘                    │  - Alert Pipeline            │   │
 │         │                                │  - Notification Service      │   │
-│         │ (REST fallback                 │  - Health/Readiness probes   │   │
-│         │  after 5 failures)             │  - Swagger/OpenAPI @ /docs   │   │
-│         │                                └───────────┬──────────────────┘   │
-│         │                                            │                      │
-│         └─────────────────┬──────────────────────────┼────────────────┐     │
-│                           │                          │                │     │
+│  ┌──────▼───────────┐                    │  - Health/Readiness probes   │   │
+│  │  YAHOO FINANCE   │◀────────────────── │  - Swagger/OpenAPI @ /docs   │   │
+│  │  (Historical)    │                    └───────────┬──────────────────┘   │
+│  └──────────────────┘                                │                      │
+│                                                      │                      │
 │                      ┌────▼─────┐            ┌───────▼──────┐    ┌────▼──┐  │
 │                      │  Redis   │            │  PostgreSQL  │    │FCM    │  │
 │                      │(Pub/Sub) │            │  (Auth,      │    │ (Push)│  │
@@ -45,38 +44,33 @@
 
 ## Runtime Components
 
-- **apps/backend**: NestJS API + Socket.io gateway + Finnhub ingestion + alert/notification pipeline
+- **apps/backend**: NestJS API + Socket.io gateway + Finnhub/Yahoo ingestion + alert/notification pipeline
 - **apps/mobile**: Expo React Native client for watchlist, alerts, and push registration
 - **packages/shared**: Shared TypeScript contracts (`CreateAlertInput`, auth user types, shared validation)
 
 ## Data and Messaging Flow
 
 1. **Authentication Flow**: Mobile app authenticates via Firebase Auth. The Firebase ID Token is sent in the `Authorization: Bearer <token>` header for all API calls. The backend verifies the token using Firebase Admin SDK and syncs the user profile in PostgreSQL.
-2. **Finnhub Ingestion**: Backend connects to Finnhub WebSocket, receives market ticks, and normalizes them.
-3. **Redis Pub/Sub**: Normalized ticks published to Redis on `price-updates` channel (configurable).
-4. **Socket Broadcast**: Socket.io gateway broadcasts `price:update` events to symbol-specific rooms and global listeners.
-5. **Alert Evaluation**: Alert engine evaluates all active user alerts against price ticks, records `AlertDispatch` events.
-6. **Notification Dispatch**: Notification service sends FCM push notifications to registered user tokens, handles invalid tokens (cleanup).
+2. **Finnhub Ingestion**: Backend connects to Finnhub WebSocket, receives real-time market ticks, and normalizes them.
+3. **Dual-Source Market Data**:
+    - **Real-time Quotes & Metrics**: Sourced exclusively from **Finnhub** (WebSocket for updates, REST for snapshots and financial metrics).
+    - **Historical Charts**: Sourced exclusively from **Yahoo Finance** public chart API to ensure high availability and robust data for all ranges (1H, 1D, 1Y, etc.).
+4. **Redis Pub/Sub**: Normalized ticks published to Redis on `price-updates` channel (configurable).
+5. **Socket Broadcast**: Socket.io gateway broadcasts `price:update` events to symbol-specific rooms and global listeners.
+6. **Alert Evaluation**: Alert engine evaluates all active user alerts against price ticks, records `AlertDispatch` events.
+7. **Notification Dispatch**: Notification service sends FCM push notifications to registered user tokens, handles invalid tokens (cleanup).
 
 ## Historical data caching (chart history)
 
-- Purpose: reliably serve recent historical candle data for charts even when Finnhub's candle endpoint is temporarily unavailable, without inventing or synthesizing values.
+- Purpose: reliably serve recent historical candle data for charts.
 
 - Flow:
-  1. When the backend successfully receives historical candles from Finnhub for a symbol+range, it caches the normalized array of points in Redis under the key:
+  1. Historical candles are fetched from **Yahoo Finance** (mandated source for chart ranges).
+  2. Successful candle responses are cached in Redis under the key:
      - `stocks:history:<SYMBOL>:<RANGE>`
-  2. The cache entry TTL is 24 hours (86400 seconds). The cache is updated whenever a fresh successful candle response is received.
-  3. On an incoming REST request to `/stocks/:symbol/history?range=...`, the backend:
-     - attempts to fetch candles from Finnhub (preferred, authoritative source),
-     - on success it returns the candles and writes them to the Redis cache,
-     - if Finnhub returns no candles (or an error) the service attempts to read the cached payload and return it as the "last known" history,
-     - if neither live candles nor a cached payload exist, the endpoint returns `503 Service Unavailable` with a clear message — the system does not fabricate or interpolate data.
-
-- Guarantees & notes:
-  - No synthetic history: the backend will never invent candle points when both live and cached data are missing.
-  - Cache semantics: cached history is a best-effort, last-known snapshot; it is suitable for displaying a chart that reflects the most recent known shape, but it is explicitly not a substitute for live market data.
-  - Redis dependency: the cache requires a functioning Redis client (configured via `REDIS_URL`). If Redis is down, the backend continues to use Finnhub but cannot provide cached fallbacks.
-  - Instrumentation: cache reads/writes are logged at WARN level for failures and at DEBUG/INFO for successful cache writes; these logs should be included in incident runbooks to detect when upstream candle coverage is missing.
+  3. The cache entry TTL is 24 hours (86400 seconds).
+  4. If the Yahoo Finance request fails, the service attempts to read the cached payload and return it as the "last known" history.
+  5. On the Mobile client, if the requested trailing window (e.g., 1H) is silent because the market is closed, the UI automatically falls back to displaying the most recent available trading data points to ensure the chart is never empty.
 
 ## Reliability and fallback behavior
 

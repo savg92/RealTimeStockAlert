@@ -379,17 +379,25 @@ export class FinnhubService implements OnModuleDestroy {
     return this.useRestFallback;
   }
 
+  private getFetchHeaders() {
+    return {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      Accept: 'application/json',
+    };
+  }
+
   async fetchPriceViaRest(symbol: string): Promise<PriceUpdate | null> {
     try {
       const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${this.apiKey}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: this.getFetchHeaders() });
 
       if (!response.ok) {
         this.logger.error(`Failed to fetch price for ${symbol}:`, response.statusText);
         return null;
       }
 
-      const data = await response.json() as { c: number; t: number; d?: number; dp?: number };
+      const data = (await response.json()) as { c: number; t: number; d?: number; dp?: number };
 
       return {
         symbol,
@@ -457,7 +465,7 @@ export class FinnhubService implements OnModuleDestroy {
     return 'max';
   }
 
-  // Fallback: fetch historical candles via Yahoo Finance public chart API
+  // Fetch historical candles via Yahoo Finance public chart API
   private async fetchCandlesViaYahoo(
     symbol: string,
     resolution: '1' | '5' | '15' | '60' | 'D' | 'W' | 'M',
@@ -473,7 +481,7 @@ export class FinnhubService implements OnModuleDestroy {
         `Falling back to Yahoo Finance for ${symbol} candles (range=${range}, interval=${interval})`,
       );
 
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: this.getFetchHeaders() });
 
       if (!response.ok) {
         this.logger.error(
@@ -538,39 +546,54 @@ export class FinnhubService implements OnModuleDestroy {
     from: number,
     to: number,
   ): Promise<HistoricalPricePoint[] | null> {
-    // Try Finnhub first
+    return this.fetchCandlesViaYahoo(symbol, resolution, from, to);
+  }
+
+  /**
+   * Fetch stock metrics via Finnhub (as it was)
+   */
+  async fetchStockMetrics(symbol: string): Promise<{
+    high52w: number;
+    low52w: number;
+    marketCap: string;
+    volume: string;
+    pe: number;
+  } | null> {
     try {
-      const url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${this.apiKey}`;
-      const response = await fetch(url);
-
+      const url = `https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${this.apiKey}`;
+      const response = await fetch(url, { headers: this.getFetchHeaders() });
       if (response.ok) {
-        const data = await response.json() as { s: string; t?: number[]; c?: number[] };
-        if (data.s === 'ok' && Array.isArray(data.t) && Array.isArray(data.c)) {
-          const points = data.t
-            .map((timestamp, index) => ({ timestamp, price: data.c?.[index] }))
-            .filter(
-              (point): point is { timestamp: number; price: number } =>
-                typeof point.timestamp === 'number' &&
-                Number.isFinite(point.timestamp) &&
-                typeof point.price === 'number' &&
-                Number.isFinite(point.price),
-            );
+        const data = (await response.json()) as any;
+        if (data.metric) {
+          const mcap = data.metric.marketCapitalization;
+          const marketCapStr =
+            typeof mcap === 'number'
+              ? mcap >= 1000000
+                ? `${(mcap / 1000000).toFixed(2)}T`
+                : `${(mcap / 1000).toFixed(1)}B`
+              : '—';
 
-          if (points.length > 0) {
-            return points;
-          }
+          const avgVol = data.metric['10DayAverageTradingVolume'] || data.metric['avgVolume'];
+          const volumeStr =
+            typeof avgVol === 'number'
+              ? avgVol >= 1000
+                ? `${(avgVol / 1000).toFixed(1)}M`
+                : `${avgVol.toFixed(1)}K`
+              : '—';
+
+          return {
+            high52w: data.metric['52WeekHigh'] || 0,
+            low52w: data.metric['52WeekLow'] || 0,
+            marketCap: marketCapStr,
+            volume: volumeStr,
+            pe: data.metric.peBasicExclExtraTTM || data.metric.peNormalized || 0,
+          };
         }
-      } else {
-        this.logger.warn(
-          `Finnhub candles returned ${response.status} for ${symbol}, trying Yahoo Finance fallback`,
-        );
       }
     } catch (error) {
-      this.logger.warn(`Finnhub candles request failed for ${symbol}:`, error);
+      this.logger.error(`Error fetching metrics for ${symbol} via Finnhub:`, error);
     }
-
-    // Fallback to Yahoo Finance
-    return this.fetchCandlesViaYahoo(symbol, resolution, from, to);
+    return null;
   }
 
   private calculateBackoff(attempt: number): number {

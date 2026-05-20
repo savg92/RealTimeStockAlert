@@ -163,15 +163,36 @@ export class StocksService {
 
   async getStockDetails(symbol: string): Promise<StockDetailSnapshot> {
     const normalizedSymbol = symbol.toUpperCase();
-    return (
-      STOCK_DETAILS_BASE[normalizedSymbol] ?? {
-        high52w: 0,
-        low52w: 0,
-        marketCap: '—',
-        volume: '—',
-        pe: 0,
+
+    // Fetch live quote for the "24h Difference" from Finnhub
+    const liveUpdate = await this.finnhub?.fetchPriceViaRest(normalizedSymbol);
+
+    try {
+      const liveMetrics = await this.finnhub?.fetchStockMetrics(normalizedSymbol);
+      if (liveMetrics) {
+        return {
+          ...liveMetrics,
+          change: liveUpdate?.change ?? 0,
+          changePercent: liveUpdate?.changePercent ?? 0,
+        };
       }
-    );
+    } catch (error) {
+      this.logger.warn(`Failed to fetch live metrics for ${normalizedSymbol}:`, error);
+    }
+
+    const base = STOCK_DETAILS_BASE[normalizedSymbol] ?? {
+      high52w: 0,
+      low52w: 0,
+      marketCap: '—',
+      volume: '—',
+      pe: 0,
+    };
+
+    return {
+      ...base,
+      change: liveUpdate?.change ?? 0,
+      changePercent: liveUpdate?.changePercent ?? 0,
+    };
   }
 
   async getStockHistory(symbol: string, requestedRange: string): Promise<StockHistoryPoint[]> {

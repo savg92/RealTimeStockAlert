@@ -77,6 +77,34 @@ Current watchlist snapshot used by the mobile dashboard to hydrate initial rows 
 ]
 ```
 
+#### GET /stocks/:symbol/details
+
+Get advanced financial metrics and live quote data for a symbol.
+
+**Response (200 OK):**
+
+```json
+{
+  "high52w": 245.89,
+  "low52w": 165.23,
+  "marketCap": "3.22T",
+  "volume": "52.4M",
+  "pe": 28.5,
+  "change": 1.75,
+  "changePercent": 0.92
+}
+```
+
+**Fields:**
+
+- `high52w: number` — 52-week high price
+- `low52w: number` — 52-week low price
+- `marketCap: string` — market capitalization (formatted as B/T)
+- `volume: string` — 10-day average trading volume (formatted as K/M)
+- `pe: number` — P/E ratio (Trailing Twelve Months)
+- `change: number` — current day price change from previous close
+- `changePercent: number` — current day price change percentage
+
 #### GET /stocks/:symbol/history
 
 Get historical price points (candles) for a symbol and named range. The `range` query parameter accepts the supported ranges: `1H`, `5H`, `1D`, `5D`, `1M`, `3M`, `1Y`, `5Y`, `ALL`.
@@ -87,10 +115,11 @@ Query parameters:
 
 Behavior:
 
-- The endpoint prefers Finnhub's historical candle data for accuracy.
+- The endpoint uses **Yahoo Finance** as the authoritative source for historical candle data.
 - Successful candle responses are cached in Redis under the key `stocks:history:<SYMBOL>:<RANGE>` and retained for 24 hours (TTL: 86400s).
-- If Finnhub returns no candles for the requested range, the backend will attempt to return the last cached history for that symbol/range instead of fabricating new data.
-- If neither Finnhub candles nor a cached history are available, the endpoint returns `503 Service Unavailable` with a clear message (no synthetic data is invented).
+- If the Yahoo Finance request fails, the backend will attempt to return the last cached history for that symbol/range.
+- If neither live candles nor a cached history are available, the endpoint returns `503 Service Unavailable`.
+- **Note:** The Mobile UI implements a fallback to show the most recent trading session points if the requested trailing window (like 1H) is currently silent (e.g., at night).
 
 Successful response (200 OK):
 
