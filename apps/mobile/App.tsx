@@ -18,6 +18,7 @@ import WatchlistScreen from './src/screens/WatchlistScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import StockDetailScreen from './src/screens/StockDetailScreen';
 import AlertsListScreen from './src/screens/AlertsListScreen';
+import AlertHistoryScreen from './src/screens/AlertHistoryScreen';
 import { useAppStore } from './src/store/appStore';
 import { createExpoPushNotificationManager } from './src/services/expoPushNotifications';
 import { PushNotificationManager } from './src/services/pushNotifications';
@@ -29,6 +30,7 @@ export type RootStackParamList = {
     symbol: string;
     name?: string;
   };
+  AlertHistory: undefined;
 };
 
 export type TabParamList = {
@@ -200,6 +202,11 @@ export default function App() {
               name="StockDetail"
               component={StockDetailScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'StockDetail'>>}
               options={({ route }) => ({ title: route.params.symbol, headerShown: true })}
+            />
+            <Stack.Screen
+              name="AlertHistory"
+              component={AlertHistoryScreen}
+              options={{ title: 'Alert History', headerShown: true }}
             />
           </Stack.Navigator>
         </NavigationContainer>

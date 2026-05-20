@@ -135,6 +135,54 @@ export class DevController {
     return this.prisma.alertDispatch.findMany({ orderBy: { createdAt: 'desc' }, take: 20 });
   }
 
+  /** List alert dispatches with filtering */
+  @Post('dispatch-history')
+  async getDispatchHistory(@Body() body?: { symbol?: string; status?: string; limit?: number; userId?: string }) {
+    this.throwIfNotDev();
+
+    const limit = body?.limit || 50;
+    const userId = body?.userId || this.testUserId;
+    const symbol = body?.symbol;
+    const status = body?.status; // 'sent', 'failed', 'pending', 'skipped'
+
+    const where: any = { userId };
+    if (symbol) {
+      where.symbol = symbol.toUpperCase();
+    }
+    if (status) {
+      where.deliveryStatus = status;
+    }
+
+    const dispatches = await this.prisma.alertDispatch.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        alert: {
+          select: { id: true, symbol: true, condition: true, threshold: true },
+        },
+      },
+    });
+
+    // Group by symbol and status for summary
+    const summary: Record<string, Record<string, number>> = {};
+    for (const dispatch of dispatches) {
+      const sym = dispatch.symbol;
+      const stat = dispatch.deliveryStatus;
+      if (!summary[sym]) {
+        summary[sym] = {};
+      }
+      summary[sym][stat] = (summary[sym][stat] || 0) + 1;
+    }
+
+    return {
+      dispatches,
+      summary,
+      count: dispatches.length,
+      filters: { userId, symbol, status, limit },
+    };
+  }
+
   /** Manually trigger an alert by ID */
   @Post('trigger/:alertId')
   async triggerAlert(@Param('alertId') alertId: string, @Body() body: { price?: number } = {}) {

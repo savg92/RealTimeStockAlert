@@ -3,7 +3,7 @@ import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AlertCondition, CreateAlertInput } from '@stock-alert/shared';
-import type { TabParamList } from '../../App';
+import type { RootStackParamList, TabParamList } from '../../App';
 import CreateAlertForm, { type CreateAlertFormPayload } from '../components/CreateAlertForm';
 import { useAppStore } from '../store/appStore';
 import type { AlertConfig } from '../types';
@@ -32,7 +32,7 @@ const buildOptimisticAlert = (
   updatedAt: new Date().toISOString(),
 });
 
-export default function AlertsListScreen({ route }: AlertsListScreenProps) {
+export default function AlertsListScreen({ route, navigation }: AlertsListScreenProps & { navigation: any }) {
   const {
     alerts,
     setAlerts,
@@ -147,9 +147,17 @@ export default function AlertsListScreen({ route }: AlertsListScreenProps) {
     >
       {/* Header */}
       <View style={{ marginBottom: 24 }}>
-        <Text style={{ fontSize: 24, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 }}>
-          Price Alerts
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: '#1a1a1a' }}>
+            Price Alerts
+          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('AlertHistory')}
+            style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+          >
+            <Text style={{ color: '#007bff', fontWeight: '600', fontSize: 13 }}>History</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={{ fontSize: 14, color: '#6c757d' }}>
           Create, view, and remove active price alerts.
         </Text>
