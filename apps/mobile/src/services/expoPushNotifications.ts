@@ -14,6 +14,11 @@ const expoAdapter: PushNotificationAdapter = {
 };
 
 export const createExpoPushNotificationManager = (): PushNotificationManager => {
-  return new PushNotificationManager(expoAdapter, createNotificationBackendClient(), Constants.isDevice);
+  const allowEmulatorPush = process.env.EXPO_PUBLIC_ALLOW_EMULATOR_PUSH === 'true';
+  return new PushNotificationManager(
+    expoAdapter,
+    createNotificationBackendClient(),
+    Constants.isDevice || allowEmulatorPush,
+  );
 };
 

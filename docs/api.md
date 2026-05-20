@@ -352,6 +352,8 @@ Send a test push notification.
 - `skipped: boolean` — true if Firebase disabled or no tokens registered
 - `reason?: string` — skip reason (e.g., "no_tokens", "firebase_disabled")
 
+> **Important:** `/notifications/test` only targets the backend user identified by the bearer token in the request. If the mobile app registered its push token under a different Firebase account, use that same bearer token in Swagger or re-sync the device token first.
+
 **Error responses:**
 
 - `401 Unauthorized` — invalid token

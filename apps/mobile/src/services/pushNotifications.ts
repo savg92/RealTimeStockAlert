@@ -1,5 +1,5 @@
 import { API_CONFIG, API_ENDPOINTS } from '../utils/api';
-import { resolveAuthBearerToken } from './authToken';
+import { resolveNotificationSyncBearerToken } from './authToken';
 
 type PermissionStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -122,7 +122,7 @@ export class PushNotificationManager {
 }
 
 const readAuthBearer = (): string | undefined => {
-  return resolveAuthBearerToken() ?? undefined;
+  return resolveNotificationSyncBearerToken() ?? undefined;
 };
 
 const buildAuthHeaders = (bearer?: string): HeadersInit => {

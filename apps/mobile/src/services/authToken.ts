@@ -28,3 +28,23 @@ export const resolveAuthBearerToken = (): string | null => {
   return null;
 };
 
+export const resolveNotificationSyncBearerToken = (): string | null => {
+  // Prefer the explicit dev/test bearer token when present so push-token
+  // registration and Swagger test calls target the same backend user.
+  const configuredToken = readEnvToken();
+  if (configuredToken) {
+    return configuredToken;
+  }
+
+  const realToken = useAuthStore.getState().idToken;
+  if (realToken) {
+    return realToken;
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    return DEV_AUTH_BEARER_TOKEN;
+  }
+
+  return null;
+};
+

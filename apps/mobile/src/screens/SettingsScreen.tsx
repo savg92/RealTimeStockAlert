@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../store/appStore';
 import * as Notifications from 'expo-notifications';
 import { API_CONFIG } from '../utils/api';
-import { resolveAuthBearerToken } from '../services/authToken';
+import { resolveNotificationSyncBearerToken } from '../services/authToken';
 import { useAuthStore } from '../store/authStore';
 
 const styles = StyleSheet.create({
@@ -269,7 +269,7 @@ export default function SettingsScreen() {
                 const token = (tokenObj as any)?.data ?? (tokenObj as any)?.token ?? String(tokenObj);
                 console.log('FCM token:', token);
 
-                const bearer = resolveAuthBearerToken();
+                const bearer = resolveNotificationSyncBearerToken();
                 if (bearer) {
                   try {
                     await fetch(`${API_CONFIG.BASE_URL}/notifications/token`, {

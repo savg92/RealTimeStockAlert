@@ -75,6 +75,7 @@ export class NotificationService {
 
     let sentCount = 0;
     const invalidTokens: string[] = [];
+    const failureReasons: string[] = [];
 
     // Send Expo push notifications (batching up to 100)
     if (expoTokens.length > 0) {
@@ -82,7 +83,12 @@ export class NotificationService {
         const expoSent = await this.sendExpoPushes(expoTokens, payload);
         sentCount += expoSent.successCount;
         invalidTokens.push(...expoSent.invalidTokens);
+        failureReasons.push(...expoSent.failureReasons);
       } catch (e) {
+        const reason = this.describeError(e);
+        if (reason) {
+          failureReasons.push(reason);
+        }
         this.logger.warn('Failed to send Expo push notifications', e as any);
       }
     }
@@ -106,6 +112,10 @@ export class NotificationService {
           sentCount += 1;
         } else {
           const code = this.readMessagingErrorCode(res.error);
+          const message = this.readMessagingErrorMessage(res.error);
+          failureReasons.push(
+            `FCM token ${fcmTokens[index]} failed${code ? ` (${code})` : ''}${message ? `: ${message}` : ''}`,
+          );
           if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
             invalidTokens.push(fcmTokens[index]);
           }
@@ -124,14 +134,16 @@ export class NotificationService {
       attemptedCount: tokens.length,
       sentCount,
       skipped: false,
+      ...(sentCount === 0 && failureReasons.length ? { reason: failureReasons[0] } : {}),
     };
   }
 
-  private async sendExpoPushes(tokens: string[], payload: NotificationPayload): Promise<{ successCount: number; invalidTokens: string[] }> {
+  private async sendExpoPushes(tokens: string[], payload: NotificationPayload): Promise<{ successCount: number; invalidTokens: string[]; failureReasons: string[] }> {
     const EXPO_ENDPOINT = 'https://exp.host/--/api/v2/push/send';
     const chunkSize = 100;
     let successCount = 0;
     const invalidTokens: string[] = [];
+    const failureReasons: string[] = [];
 
     for (let i = 0; i < tokens.length; i += chunkSize) {
       const chunk = tokens.slice(i, i + chunkSize);
@@ -154,6 +166,7 @@ export class NotificationService {
 
         if (!res.ok) {
           this.logger.warn(`Expo push returned ${res.status}`);
+          failureReasons.push(`Expo push returned HTTP ${res.status}`);
           continue;
         }
 
@@ -180,10 +193,14 @@ export class NotificationService {
         }
       } catch (err) {
         this.logger.warn('Error sending Expo pushes', err as any);
+        const reason = this.describeError(err);
+        if (reason) {
+          failureReasons.push(reason);
+        }
       }
     }
 
-    return { successCount, invalidTokens };
+    return { successCount, invalidTokens, failureReasons };
   }
 
   private async sendWithRetry(tokens: string[], payload: NotificationPayload) {
@@ -228,5 +245,35 @@ export class NotificationService {
 
     const code = Reflect.get(error, 'code');
     return typeof code === 'string' ? code : null;
+  }
+
+  private readMessagingErrorMessage(error: unknown): string | null {
+    if (!error || typeof error !== 'object') {
+      return null;
+    }
+
+    const message = Reflect.get(error, 'message');
+    return typeof message === 'string' && message.trim() ? message.trim() : null;
+  }
+
+  private describeError(error: unknown): string | null {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    const message = this.readMessagingErrorMessage(error);
+    if (message) {
+      return message;
+    }
+
+    if (error && typeof error === 'object') {
+      try {
+        return JSON.stringify(error);
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
   }
 }

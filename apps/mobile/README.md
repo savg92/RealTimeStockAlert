@@ -55,7 +55,10 @@ EXPO_PUBLIC_AUTH_BEARER_TOKEN=<firebase-id-token>
 ```
 
 `EXPO_PUBLIC_AUTH_BEARER_TOKEN` is optional but required to sync FCM device tokens with authenticated backend routes.
+When it is set, notification-token sync prefers that explicit bearer token so local Swagger tests and the device registration step target the same backend user.
 If it is unset, the mobile app uses a local no-op sync client so Expo/dev builds still run without committed secrets.
+
+To allow push-token registration on an Android emulator during local testing, set `EXPO_PUBLIC_ALLOW_EMULATOR_PUSH=true` in `.env.local` and restart the app.
 
 On an Android emulator, the app falls back to `http://10.0.2.2:3000` automatically when these values are unset.
 
