@@ -273,7 +273,6 @@ See [docs/setup.md > Production handoff](./docs/setup.md#production-handoff) for
 - **[docs/api.md](./docs/api.md)** — REST API reference + Swagger integration
 - **[PRD.md](./PRD.md)** — product requirements and scope
 - **[plan.md](./plan.md)** — implementation roadmap and progress
-- **[AGENTS.md](./AGENTS.md)** — conductor workflow conventions
 
 ## Testing
 
