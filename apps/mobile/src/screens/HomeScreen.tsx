@@ -1,13 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import CombinedStocksChart from '../components/CombinedStocksChart';
 
 function HomeScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Home Screen</Text>
-        <Text style={styles.subtitle}>Monitor stock prices and set instant alerts</Text>
-      </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Welcome!</Text>
@@ -29,6 +26,14 @@ function HomeScreen({ navigation }: any) {
         >
           <Text style={styles.watchlistButtonText}>Open Watchlist</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Combined stock graph</Text>
+        <Text style={styles.description}>
+          Track the relative performance of all watched stocks in one view.
+        </Text>
+        <CombinedStocksChart />
       </View>
 
       <View style={styles.section}>
