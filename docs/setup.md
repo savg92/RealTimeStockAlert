@@ -37,10 +37,21 @@ Firebase admin credentials (choose one):
 
 - `EXPO_PUBLIC_API_URL` (default fallback in code: `http://localhost:3000`)
 - `EXPO_PUBLIC_SOCKET_URL` (default fallback in code: `http://localhost:3000`; Android emulator uses `http://10.0.2.2:3000`)
-- `EXPO_PUBLIC_AUTH_BEARER_TOKEN` (optional; when unset, notification token sync becomes no-op)
 - `EXPO_PUBLIC_ENABLE_NOTIFICATIONS`
 - `EXPO_PUBLIC_ENABLE_OFFLINE_MODE`
 - `EXPO_ANDROID_GOOGLE_SERVICES_FILE` (optional path, default `./google-services.json`)
+
+### Authentication
+
+The app uses **Firebase Email/Password Authentication**. 
+
+1. Ensure "Email/Password" is enabled in the Firebase Console.
+2. The mobile app uses the Firebase JS SDK with persistence managed by `expo-secure-store`.
+3. An initial test user can be created using the backend script:
+   ```bash
+   cd apps/backend && npx ts-node scripts/create-test-user.ts
+   ```
+   (Default credentials: `test@example.com` / `password123`)
 
 ## Local development
 

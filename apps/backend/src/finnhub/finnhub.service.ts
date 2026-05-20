@@ -427,41 +427,150 @@ export class FinnhubService implements OnModuleDestroy {
     }
   }
 
-  // Fetch historical candles via Finnhub REST API
-  async fetchCandlesViaRest(
+  // Map Finnhub resolution to Yahoo Finance interval
+  private mapResolutionToYahooInterval(
+    resolution: '1' | '5' | '15' | '60' | 'D' | 'W' | 'M',
+  ): string {
+    const mapping: Record<string, string> = {
+      '1': '1m',
+      '5': '5m',
+      '15': '15m',
+      '60': '1h',
+      D: '1d',
+      W: '1wk',
+      M: '1mo',
+    };
+    return mapping[resolution] ?? '1d';
+  }
+
+  // Compute a Yahoo Finance range string from the time span
+  private computeYahooRange(fromSeconds: number, toSeconds: number): string {
+    const spanDays = (toSeconds - fromSeconds) / 86400;
+    if (spanDays <= 1) return '1d';
+    if (spanDays <= 5) return '5d';
+    if (spanDays <= 30) return '1mo';
+    if (spanDays <= 90) return '3mo';
+    if (spanDays <= 180) return '6mo';
+    if (spanDays <= 365) return '1y';
+    if (spanDays <= 730) return '2y';
+    if (spanDays <= 1825) return '5y';
+    return 'max';
+  }
+
+  // Fallback: fetch historical candles via Yahoo Finance public chart API
+  private async fetchCandlesViaYahoo(
     symbol: string,
     resolution: '1' | '5' | '15' | '60' | 'D' | 'W' | 'M',
     from: number,
     to: number,
   ): Promise<HistoricalPricePoint[] | null> {
     try {
-      const url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${this.apiKey}`;
+      const interval = this.mapResolutionToYahooInterval(resolution);
+      const range = this.computeYahooRange(from, to);
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
+
+      this.logger.log(
+        `Falling back to Yahoo Finance for ${symbol} candles (range=${range}, interval=${interval})`,
+      );
+
       const response = await fetch(url);
 
       if (!response.ok) {
-        this.logger.error(`Failed to fetch candles for ${symbol}:`, response.statusText);
+        this.logger.error(
+          `Yahoo Finance fallback failed for ${symbol}: ${response.status} ${response.statusText}`,
+        );
         return null;
       }
 
-      const data = await response.json() as { s: string; t?: number[]; c?: number[] };
-      if (data.s !== 'ok' || !Array.isArray(data.t) || !Array.isArray(data.c)) {
+      const data = (await response.json()) as {
+        chart?: {
+          result?: Array<{
+            timestamp?: number[];
+            indicators?: {
+              quote?: Array<{ close?: (number | null)[] }>;
+            };
+          }>;
+          error?: { code?: string; description?: string } | null;
+        };
+      };
+
+      const result = data?.chart?.result?.[0];
+      if (!result?.timestamp || !result?.indicators?.quote?.[0]?.close) {
+        this.logger.warn(`Yahoo Finance returned no chart data for ${symbol}`);
         return null;
       }
 
-      const points = data.t
-        .map((timestamp, index) => ({ timestamp, price: data.c?.[index] }))
-        .filter((point): point is { timestamp: number; price: number } => (
-          typeof point.timestamp === 'number'
-          && Number.isFinite(point.timestamp)
-          && typeof point.price === 'number'
-          && Number.isFinite(point.price)
-        ));
+      const timestamps = result.timestamp;
+      const closes = result.indicators.quote[0].close;
 
-      return points.length > 0 ? points : null;
+      const points: HistoricalPricePoint[] = [];
+      for (let i = 0; i < timestamps.length; i++) {
+        const ts = timestamps[i];
+        const price = closes[i];
+        if (
+          typeof ts === 'number' &&
+          Number.isFinite(ts) &&
+          typeof price === 'number' &&
+          Number.isFinite(price)
+        ) {
+          points.push({ timestamp: ts, price });
+        }
+      }
+
+      // Filter to the requested time window
+      const filtered = points.filter((p) => p.timestamp >= from && p.timestamp <= to);
+
+      this.logger.log(
+        `Yahoo Finance returned ${filtered.length} candles for ${symbol} (${points.length} total, filtered to requested window)`,
+      );
+
+      return filtered.length > 0 ? filtered : points.length > 0 ? points : null;
     } catch (error) {
-      this.logger.error(`Error fetching candles for ${symbol} via REST:`, error);
+      this.logger.error(`Error fetching candles for ${symbol} via Yahoo Finance:`, error);
       return null;
     }
+  }
+
+  // Fetch historical candles via Finnhub REST API, with Yahoo Finance fallback
+  async fetchCandlesViaRest(
+    symbol: string,
+    resolution: '1' | '5' | '15' | '60' | 'D' | 'W' | 'M',
+    from: number,
+    to: number,
+  ): Promise<HistoricalPricePoint[] | null> {
+    // Try Finnhub first
+    try {
+      const url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${this.apiKey}`;
+      const response = await fetch(url);
+
+      if (response.ok) {
+        const data = await response.json() as { s: string; t?: number[]; c?: number[] };
+        if (data.s === 'ok' && Array.isArray(data.t) && Array.isArray(data.c)) {
+          const points = data.t
+            .map((timestamp, index) => ({ timestamp, price: data.c?.[index] }))
+            .filter(
+              (point): point is { timestamp: number; price: number } =>
+                typeof point.timestamp === 'number' &&
+                Number.isFinite(point.timestamp) &&
+                typeof point.price === 'number' &&
+                Number.isFinite(point.price),
+            );
+
+          if (points.length > 0) {
+            return points;
+          }
+        }
+      } else {
+        this.logger.warn(
+          `Finnhub candles returned ${response.status} for ${symbol}, trying Yahoo Finance fallback`,
+        );
+      }
+    } catch (error) {
+      this.logger.warn(`Finnhub candles request failed for ${symbol}:`, error);
+    }
+
+    // Fallback to Yahoo Finance
+    return this.fetchCandlesViaYahoo(symbol, resolution, from, to);
   }
 
   private calculateBackoff(attempt: number): number {

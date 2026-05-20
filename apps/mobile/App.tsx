@@ -19,6 +19,9 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import StockDetailScreen from './src/screens/StockDetailScreen';
 import AlertsListScreen from './src/screens/AlertsListScreen';
 import AlertHistoryScreen from './src/screens/AlertHistoryScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import SignUpScreen from './src/screens/SignUpScreen';
+import { useAuthStore } from './src/store/authStore';
 import { useAppStore } from './src/store/appStore';
 import { createExpoPushNotificationManager } from './src/services/expoPushNotifications';
 import { PushNotificationManager } from './src/services/pushNotifications';
@@ -31,6 +34,8 @@ export type RootStackParamList = {
     name?: string;
   };
   AlertHistory: undefined;
+  Login: undefined;
+  SignUp: undefined;
 };
 
 export type TabParamList = {
@@ -98,6 +103,10 @@ function TabNavigator() {
 export default function App() {
   const notificationsEnabled = useAppStore((state) => state.settings.notifications);
   const setError = useAppStore((state) => state.setError);
+  
+  const user = useAuthStore((state) => state.user);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
+
   const notificationManagerRef = React.useRef<PushNotificationManager | null>(null);
   const navigationRef = React.useMemo(() => createNavigationContainerRef<RootStackParamList>(), []);
   const notificationRouterRef = React.useRef(new NotificationRouter(navigationRef));
@@ -120,17 +129,19 @@ export default function App() {
       } catch (error) {
         console.error('Failed to initialize app:', error);
       } finally {
-        // Always attempt to hide the splash screen so app remains interactive
-        try {
-          await SplashScreen.hideAsync();
-        } catch (hideError) {
-          console.warn('Failed to hide splash screen:', hideError);
+        // Wait for auth to be initialized before hiding splash screen
+        if (isInitialized) {
+          try {
+            await SplashScreen.hideAsync();
+          } catch (hideError) {
+            console.warn('Failed to hide splash screen:', hideError);
+          }
         }
       }
     };
 
     void initializeApp();
-  }, []);
+  }, [isInitialized]);
 
   React.useEffect(() => {
     const manager = notificationManagerRef.current;
@@ -194,20 +205,29 @@ export default function App() {
               headerShown: false,
             }}
           >
-            <Stack.Screen
-              name="HomeTabs"
-              component={TabNavigator}
-            />
-            <Stack.Screen
-              name="StockDetail"
-              component={StockDetailScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'StockDetail'>>}
-              options={({ route }) => ({ title: route.params.symbol, headerShown: true })}
-            />
-            <Stack.Screen
-              name="AlertHistory"
-              component={AlertHistoryScreen}
-              options={{ title: 'Alert History', headerShown: true }}
-            />
+            {!user ? (
+              <>
+                <Stack.Screen name="Login" component={LoginScreen} />
+                <Stack.Screen name="SignUp" component={SignUpScreen} />
+              </>
+            ) : (
+              <>
+                <Stack.Screen
+                  name="HomeTabs"
+                  component={TabNavigator}
+                />
+                <Stack.Screen
+                  name="StockDetail"
+                  component={StockDetailScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'StockDetail'>>}
+                  options={({ route }) => ({ title: route.params.symbol, headerShown: true })}
+                />
+                <Stack.Screen
+                  name="AlertHistory"
+                  component={AlertHistoryScreen}
+                  options={{ title: 'Alert History', headerShown: true }}
+                />
+              </>
+            )}
           </Stack.Navigator>
         </NavigationContainer>
         <StatusBar />

@@ -5,6 +5,7 @@ import { useAppStore } from '../store/appStore';
 import * as Notifications from 'expo-notifications';
 import { API_CONFIG } from '../utils/api';
 import { resolveAuthBearerToken } from '../services/authToken';
+import { useAuthStore } from '../store/authStore';
 
 const styles = StyleSheet.create({
   container: {
@@ -154,6 +155,8 @@ const SettingItem: React.FC<SettingItemProps> = ({
 export default function SettingsScreen() {
   const settings = useAppStore((state) => state.settings);
   const updateSettings = useAppStore((state) => state.updateSettings);
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
 
   const setNotifications = React.useCallback(
     (value: boolean) => {
@@ -181,8 +184,12 @@ export default function SettingsScreen() {
       { text: 'Cancel', onPress: () => {}, style: 'cancel' },
       {
         text: 'Logout',
-        onPress: () => {
-          // TODO: Implement logout logic
+        onPress: async () => {
+          try {
+            await logout();
+          } catch {
+            Alert.alert('Error', 'Failed to logout');
+          }
         },
         style: 'destructive',
       },
@@ -199,6 +206,22 @@ export default function SettingsScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
       >
+        {/* Account Section */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <View style={styles.settingItem}>
+            <View style={styles.settingContent}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Ionicons name="person-circle-outline" size={24} color="#007bff" />
+                <View>
+                  <Text style={styles.settingLabel}>{user?.name || 'User'}</Text>
+                  <Text style={styles.settingDescription}>{user?.email}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Info Card */}
         <View style={styles.infoCard}>
           <Text style={styles.infoText}>

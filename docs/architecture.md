@@ -27,16 +27,16 @@
 │                           │                  └──────────────┘         │     │
 │     ┌─────────────────────┘                                           │     │
 │     │                                                                 │     │
-│  ┌──▼──────────────────────────────────────┐                          │     │
-│  │   MOBILE (Expo React Native)            │                          │     │
-│  │ ┌──────────────────────────────────────┐│                          │     │
-│  │ │ • Watchlist Screen (live prices)     ││                          │     │
-│  │ │ • Alerts Screen (CRUD + updates)     ││                          │     │
+│  ┌──▼──────────────────────────────────────┐          ┌───────────────▼──┐  │
+│  │   MOBILE (Expo React Native)            │          │  Firebase Auth   │  │
+│  │ ┌──────────────────────────────────────┐│          │  (Login/SignUp)  │  │
+│  │ │ • Watchlist Screen (live prices)     ││◀─────────▶                  │  │
+│  │ │ • Alerts Screen (CRUD + updates)     ││          └───────────────┬──┘  │
 │  │ │ • Alert History (dispatch logs)      ││                          │     │
 │  │ │ • Stock Detail + Chart               ││  ◀───────────────────────┘     │
-│  │ │ • Settings (token sync)              ││                                │
+│  │ │ • Settings (Logout, user info)       ││                                │
+│  │ │ • Login/SignUp Screens               ││                                │
 │  │ │ • Socket.io client (subscribe/recv)  ││                                │
-│  │ │ • REST fallback (no socket)          ││                                │
 │  │ └──────────────────────────────────────┘│                                │
 │  └─────────────────────────────────────────┘                                │
 │                                                                             │
@@ -51,11 +51,12 @@
 
 ## Data and Messaging Flow
 
-1. **Finnhub Ingestion**: Backend connects to Finnhub WebSocket, receives market ticks, and normalizes them.
-2. **Redis Pub/Sub**: Normalized ticks published to Redis on `price-updates` channel (configurable).
-3. **Socket Broadcast**: Socket.io gateway broadcasts `price:update` events to symbol-specific rooms and global listeners.
-4. **Alert Evaluation**: Alert engine evaluates all active user alerts against price ticks, records `AlertDispatch` events.
-5. **Notification Dispatch**: Notification service sends FCM push notifications to registered user tokens, handles invalid tokens (cleanup).
+1. **Authentication Flow**: Mobile app authenticates via Firebase Auth. The Firebase ID Token is sent in the `Authorization: Bearer <token>` header for all API calls. The backend verifies the token using Firebase Admin SDK and syncs the user profile in PostgreSQL.
+2. **Finnhub Ingestion**: Backend connects to Finnhub WebSocket, receives market ticks, and normalizes them.
+3. **Redis Pub/Sub**: Normalized ticks published to Redis on `price-updates` channel (configurable).
+4. **Socket Broadcast**: Socket.io gateway broadcasts `price:update` events to symbol-specific rooms and global listeners.
+5. **Alert Evaluation**: Alert engine evaluates all active user alerts against price ticks, records `AlertDispatch` events.
+6. **Notification Dispatch**: Notification service sends FCM push notifications to registered user tokens, handles invalid tokens (cleanup).
 
 ## Historical data caching (chart history)
 

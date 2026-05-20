@@ -353,7 +353,7 @@ export default function WatchlistScreen({ navigation }: any) {
         let watchlistResponse: Response | null = null;
         try {
           watchlistResponse = await fetch(`${API_CONFIG.BASE_URL}/watchlist`, { headers });
-        } catch (err) {
+        } catch {
           // network error - we'll fallback to socket/rest
           watchlistResponse = null;
         }
@@ -363,12 +363,12 @@ export default function WatchlistScreen({ navigation }: any) {
           if (Array.isArray(items) && items.length > 0) {
             // fetch latest snapshot for each symbol
             const snapshots = await Promise.all(
-              items.map(async (it: any, idx: number) => {
+              items.map(async (it: any) => {
                 try {
                   const res = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_BY_SYMBOL(it.symbol)}`);
                   if (!res.ok) throw new Error('Failed to fetch snapshot');
                   return await res.json();
-                } catch (e) {
+                } catch {
                   return { symbol: it.symbol, name: it.name ?? it.symbol, price: 0 };
                 }
               }),
@@ -532,7 +532,7 @@ export default function WatchlistScreen({ navigation }: any) {
             },
             body: JSON.stringify({ symbol: normalizedStock.symbol, name: normalizedStock.name }),
           });
-        } catch (err) {
+        } catch {
           // Non-fatal: still add locally
         }
       }

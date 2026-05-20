@@ -1,3 +1,5 @@
+import { useAuthStore } from '../store/authStore';
+
 const DEV_AUTH_BEARER_TOKEN = 'dev-test-token-12345';
 
 const readEnvToken = (): string | null => {
@@ -6,11 +8,19 @@ const readEnvToken = (): string | null => {
 };
 
 export const resolveAuthBearerToken = (): string | null => {
+  // 1. Try real token from authStore
+  const realToken = useAuthStore.getState().idToken;
+  if (realToken) {
+    return realToken;
+  }
+
+  // 2. Fallback to env-configured token
   const configuredToken = readEnvToken();
   if (configuredToken) {
     return configuredToken;
   }
 
+  // 3. Last resort: development token
   if (process.env.NODE_ENV === 'development') {
     return DEV_AUTH_BEARER_TOKEN;
   }

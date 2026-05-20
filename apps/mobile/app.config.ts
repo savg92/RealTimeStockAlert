@@ -42,5 +42,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...config.ios,
       bundleIdentifier: iosBundleIdentifier,
     },
+    plugins: [
+      ...(config.plugins || []),
+      'expo-secure-store'
+    ],
   };
 };

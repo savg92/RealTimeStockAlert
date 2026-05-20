@@ -57,3 +57,7 @@ coverage/
 /apps/mobile/android/gradle/*
 /apps/mobile/android/*
 
+# antigravity cli
+
+.antigravitycli
+

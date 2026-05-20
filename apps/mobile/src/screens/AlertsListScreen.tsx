@@ -3,7 +3,7 @@ import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AlertCondition, CreateAlertInput } from '@stock-alert/shared';
-import type { RootStackParamList, TabParamList } from '../../App';
+import type { TabParamList } from '../../App';
 import CreateAlertForm, { type CreateAlertFormPayload } from '../components/CreateAlertForm';
 import { useAppStore } from '../store/appStore';
 import type { AlertConfig } from '../types';
