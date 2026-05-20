@@ -19,7 +19,9 @@ export interface PushNotificationAdapter {
   getPermissionsAsync: () => Promise<PushPermissionResponse>;
   requestPermissionsAsync: () => Promise<PushPermissionResponse>;
   getDevicePushTokenAsync: () => Promise<PushTokenResponse>;
-  addPushTokenListener: (listener: (token: PushTokenResponse) => void) => PushTokenListenerSubscription;
+  addPushTokenListener: (
+    listener: (token: PushTokenResponse) => void,
+  ) => PushTokenListenerSubscription;
 }
 
 export interface PushNotificationBackend {
@@ -129,7 +131,9 @@ const buildAuthHeaders = (bearer?: string): HeadersInit => {
   return bearer ? { Authorization: `Bearer ${bearer}` } : {};
 };
 
-export const createNotificationBackendClient = (bearerToken = readAuthBearer()): PushNotificationBackend => {
+export const createNotificationBackendClient = (
+  bearerToken = readAuthBearer(),
+): PushNotificationBackend => {
   const bearer = bearerToken?.trim();
 
   if (!bearer) {

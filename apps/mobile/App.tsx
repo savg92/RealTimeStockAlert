@@ -80,7 +80,11 @@ function TabNavigator() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'Home', tabBarButtonTestID: 'tab-home', tabBarAccessibilityLabel: 'tab-home' }}
+        options={{
+          title: 'Home',
+          tabBarButtonTestID: 'tab-home',
+          tabBarAccessibilityLabel: 'tab-home',
+        }}
       />
       <Tab.Screen
         name="Watchlist"
@@ -116,7 +120,7 @@ function TabNavigator() {
 export default function App() {
   const notificationsEnabled = useAppStore((state) => state.settings.notifications);
   const setError = useAppStore((state) => state.setError);
-  
+
   const user = useAuthStore((state) => state.user);
   const isInitialized = useAuthStore((state) => state.isInitialized);
 
@@ -232,13 +236,14 @@ export default function App() {
               </>
             ) : (
               <>
-                <Stack.Screen
-                  name="HomeTabs"
-                  component={TabNavigator}
-                />
+                <Stack.Screen name="HomeTabs" component={TabNavigator} />
                 <Stack.Screen
                   name="StockDetail"
-                  component={StockDetailScreen as React.ComponentType<NativeStackScreenProps<RootStackParamList, 'StockDetail'>>}
+                  component={
+                    StockDetailScreen as React.ComponentType<
+                      NativeStackScreenProps<RootStackParamList, 'StockDetail'>
+                    >
+                  }
                   options={({ route }) => ({ title: route.params.symbol, headerShown: true })}
                 />
                 <Stack.Screen

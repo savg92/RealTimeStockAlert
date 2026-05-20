@@ -198,11 +198,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
-
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-      >
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         {/* Account Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Account</Text>
@@ -266,7 +262,8 @@ export default function SettingsScreen() {
                 }
 
                 const tokenObj = await Notifications.getDevicePushTokenAsync();
-                const token = (tokenObj as any)?.data ?? (tokenObj as any)?.token ?? String(tokenObj);
+                const token =
+                  (tokenObj as any)?.data ?? (tokenObj as any)?.token ?? String(tokenObj);
                 console.log('FCM token:', token);
 
                 const bearer = resolveNotificationSyncBearerToken();
@@ -312,16 +309,8 @@ export default function SettingsScreen() {
             isSwitch
             icon="moon-outline"
           />
-          <SettingItem
-            label="Currency"
-            description="USD"
-            icon="cash-outline"
-          />
-          <SettingItem
-            label="Time Format"
-            description="12-hour"
-            icon="time-outline"
-          />
+          <SettingItem label="Currency" description="USD" icon="cash-outline" />
+          <SettingItem label="Time Format" description="12-hour" icon="time-outline" />
         </View>
 
         {/* Data Section */}
@@ -349,11 +338,7 @@ export default function SettingsScreen() {
         {/* About Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>About</Text>
-          <SettingItem
-            label="Version"
-            description="1.0.0"
-            icon="information-circle-outline"
-          />
+          <SettingItem label="Version" description="1.0.0" icon="information-circle-outline" />
           <SettingItem label="Privacy Policy" icon="shield-checkmark-outline" />
           <SettingItem label="Terms of Service" icon="document-text-outline" />
         </View>
@@ -365,10 +350,7 @@ export default function SettingsScreen() {
             <Text style={styles.buttonText}>Save Settings</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, styles.dangerButton]}
-            onPress={handleLogout}
-          >
+          <TouchableOpacity style={[styles.button, styles.dangerButton]} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={18} color="#fff" />
             <Text style={styles.buttonText}>Logout</Text>
           </TouchableOpacity>

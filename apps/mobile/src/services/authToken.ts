@@ -47,4 +47,3 @@ export const resolveNotificationSyncBearerToken = (): string | null => {
 
   return null;
 };
-

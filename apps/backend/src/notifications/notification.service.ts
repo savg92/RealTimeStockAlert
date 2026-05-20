@@ -70,8 +70,12 @@ export class NotificationService {
     const tokens = tokenRows.map((r) => r.token);
 
     // Split Expo tokens vs FCM tokens
-    const expoTokens = tokens.filter((t) => typeof t === 'string' && t.startsWith('ExponentPushToken')) as string[];
-    const fcmTokens = tokens.filter((t) => typeof t === 'string' && !t.startsWith('ExponentPushToken')) as string[];
+    const expoTokens = tokens.filter(
+      (t) => typeof t === 'string' && t.startsWith('ExponentPushToken'),
+    ) as string[];
+    const fcmTokens = tokens.filter(
+      (t) => typeof t === 'string' && !t.startsWith('ExponentPushToken'),
+    ) as string[];
 
     let sentCount = 0;
     const invalidTokens: string[] = [];
@@ -116,7 +120,10 @@ export class NotificationService {
           failureReasons.push(
             `FCM token ${fcmTokens[index]} failed${code ? ` (${code})` : ''}${message ? `: ${message}` : ''}`,
           );
-          if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+          if (
+            code === 'messaging/registration-token-not-registered' ||
+            code === 'messaging/invalid-registration-token'
+          ) {
             invalidTokens.push(fcmTokens[index]);
           }
           this.logger.warn(`Failed to send push notification for token. code=${code ?? 'unknown'}`);
@@ -138,7 +145,10 @@ export class NotificationService {
     };
   }
 
-  private async sendExpoPushes(tokens: string[], payload: NotificationPayload): Promise<{ successCount: number; invalidTokens: string[]; failureReasons: string[] }> {
+  private async sendExpoPushes(
+    tokens: string[],
+    payload: NotificationPayload,
+  ): Promise<{ successCount: number; invalidTokens: string[]; failureReasons: string[] }> {
     const EXPO_ENDPOINT = 'https://exp.host/--/api/v2/push/send';
     const chunkSize = 100;
     let successCount = 0;
@@ -172,7 +182,7 @@ export class NotificationService {
 
         const json = await res.json();
         // json should be { data: [ { status: 'ok'|'error', id?, message?, details? }, ... ] }
-        const data = Array.isArray(json) ? json : json.data ?? [];
+        const data = Array.isArray(json) ? json : (json.data ?? []);
         // The Expo push API sometimes returns an array directly or a {data: [...]} wrapper
         const results = Array.isArray(data) && data.length ? data : json;
 
@@ -229,7 +239,9 @@ export class NotificationService {
               `Push notification attempt ${attempt} failed: ${JSON.stringify(error)}`,
             );
           } catch {
-            this.logger.warn(`Push notification attempt ${attempt} failed: (non-serializable error)`);
+            this.logger.warn(
+              `Push notification attempt ${attempt} failed: (non-serializable error)`,
+            );
           }
         }
       }

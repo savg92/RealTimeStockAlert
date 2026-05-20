@@ -21,4 +21,3 @@ export const createExpoPushNotificationManager = (): PushNotificationManager => 
     Constants.isDevice || allowEmulatorPush,
   );
 };
-
