@@ -45,10 +45,10 @@ export default function AlertsListScreen({ route, navigation }: AlertsListScreen
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  const token = React.useMemo(() => authTokenResolver.getAuthToken(), []);
   const prefilledSymbol = route.params?.symbol;
 
   const loadAlerts = React.useCallback(async () => {
+    const token = authTokenResolver.getAuthToken();
     if (!token) {
       setError('Missing auth token. Set EXPO_PUBLIC_AUTH_BEARER_TOKEN.');
       return;
@@ -64,7 +64,7 @@ export default function AlertsListScreen({ route, navigation }: AlertsListScreen
     } finally {
       setIsLoading(false);
     }
-  }, [setAlerts, setError, token]);
+  }, [setAlerts, setError]);
 
   // Load alerts when screen is focused
   useFocusEffect(
@@ -75,6 +75,7 @@ export default function AlertsListScreen({ route, navigation }: AlertsListScreen
 
   const handleCreateAlert = React.useCallback(
     async (payload: CreateAlertFormPayload, condition: AlertCondition) => {
+      const token = authTokenResolver.getAuthToken();
       if (!token) {
         setError('Missing auth token. Set EXPO_PUBLIC_AUTH_BEARER_TOKEN.');
         return;
@@ -102,11 +103,12 @@ export default function AlertsListScreen({ route, navigation }: AlertsListScreen
         setIsSubmitting(false);
       }
     },
-    [addAlert, removeAlert, setError, token],
+    [addAlert, removeAlert, setError],
   );
 
   const handleDeleteAlert = React.useCallback(
     async (alertId: string) => {
+      const token = authTokenResolver.getAuthToken();
       if (!token) {
         setError('Missing auth token. Set EXPO_PUBLIC_AUTH_BEARER_TOKEN.');
         return;
@@ -127,7 +129,7 @@ export default function AlertsListScreen({ route, navigation }: AlertsListScreen
         setError(deleteError instanceof Error ? deleteError.message : 'Failed to delete alert.');
       }
     },
-    [addAlert, alerts, removeAlert, setError, token],
+    [addAlert, alerts, removeAlert, setError],
   );
 
   const handleRefresh = React.useCallback(async () => {

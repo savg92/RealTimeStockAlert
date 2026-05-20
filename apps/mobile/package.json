@@ -10,6 +10,7 @@
     "dev:go": "expo start",
     "web": "expo start --web",
     "android": "node scripts/run-android.mjs android",
+    "e2e:android": "node scripts/e2e-stock-alert.mjs",
     "ios": "expo run:ios",
     "build": "npm run --prefix ../../packages/shared build && expo export --platform all",
     "test": "jest",

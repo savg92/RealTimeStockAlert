@@ -451,6 +451,8 @@ export default function StockDetailScreen({ route, navigation }: StockDetailScre
         {/* Quick actions: Set alert, Add to watchlist */}
         <View style={{ marginTop: 10, flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
+            testID="stock-detail-set-alert-button"
+            accessibilityLabel="stock-detail-set-alert-button"
             onPress={() => {
               navigation.navigate('HomeTabs', {
                 screen: 'Alerts',
@@ -469,6 +471,8 @@ export default function StockDetailScreen({ route, navigation }: StockDetailScre
           </TouchableOpacity>
 
           <TouchableOpacity
+            testID="stock-detail-add-watchlist-button"
+            accessibilityLabel="stock-detail-add-watchlist-button"
             onPress={() => {
               try {
                 if (typeof addToWatchlist === 'function') {

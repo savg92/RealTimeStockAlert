@@ -187,7 +187,12 @@ bun run test
 
 # Watch mode
 bun run test:watch
+
+# Android emulator demo flow
+E2E_EMAIL=<firebase-email> E2E_PASSWORD=<firebase-password> bun run e2e:android
 ```
+
+The emulator flow logs in, opens Watchlist, adds a stock, opens the stock detail screen, creates an alert, and triggers it through the backend dev endpoint. Set `E2E_SYMBOL`, `E2E_ALERT_THRESHOLD`, or `E2E_FIREBASE_API_KEY` to override the defaults.
 
 ## Linting
 

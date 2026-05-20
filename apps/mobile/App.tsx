@@ -79,22 +79,34 @@ function TabNavigator() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'Home' }}
+        options={{ title: 'Home', tabBarButtonTestID: 'tab-home', tabBarAccessibilityLabel: 'tab-home' }}
       />
       <Tab.Screen
         name="Watchlist"
         component={WatchlistScreen}
-        options={{ title: 'My Watchlist' }}
+        options={{
+          title: 'My Watchlist',
+          tabBarButtonTestID: 'tab-watchlist',
+          tabBarAccessibilityLabel: 'tab-watchlist',
+        }}
       />
       <Tab.Screen
         name="Alerts"
         component={AlertsListScreen}
-        options={{ title: 'Price Alerts' }}
+        options={{
+          title: 'Price Alerts',
+          tabBarButtonTestID: 'tab-alerts',
+          tabBarAccessibilityLabel: 'tab-alerts',
+        }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ title: 'Settings' }}
+        options={{
+          title: 'Settings',
+          tabBarButtonTestID: 'tab-settings',
+          tabBarAccessibilityLabel: 'tab-settings',
+        }}
       />
     </Tab.Navigator>
   );
@@ -235,4 +247,3 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
-

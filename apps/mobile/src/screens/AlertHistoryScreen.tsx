@@ -196,9 +196,8 @@ export default function AlertHistoryScreen() {
   const [selectedStatus, setSelectedStatus] = React.useState<string | null>(null);
   const [allSymbols, setAllSymbols] = React.useState<string[]>([]);
 
-  const token = React.useMemo(() => resolveAuthBearerToken(), []);
-
   const loadDispatchHistory = React.useCallback(async () => {
+    const token = resolveAuthBearerToken();
     if (!token) {
       setError('Missing auth token. Set EXPO_PUBLIC_AUTH_BEARER_TOKEN.');
       return;
@@ -212,7 +211,7 @@ export default function AlertHistoryScreen() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: token,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           symbol: selectedSymbol || undefined,
@@ -236,7 +235,7 @@ export default function AlertHistoryScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedSymbol, selectedStatus, token, setError]);
+  }, [selectedSymbol, selectedStatus, setError]);
 
   React.useEffect(() => {
     void loadDispatchHistory();

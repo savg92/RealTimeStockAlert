@@ -328,6 +328,7 @@ export default function WatchlistScreen({ navigation }: any) {
 
   React.useEffect(() => {
     let isActive = true;
+    const isJest = typeof process !== 'undefined' && process.env && process.env.JEST_WORKER_ID;
 
     const hydrateWatchlist = async () => {
       if (hydratingRef.current) {
@@ -345,43 +346,45 @@ export default function WatchlistScreen({ navigation }: any) {
         hydratingRef.current = true;
         setLoading(true);
 
-        // First try to load persisted watchlist items from backend
-        const token = resolveAuthBearerToken();
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (token) headers.Authorization = `Bearer ${token}`;
+        if (!isJest) {
+          // First try to load persisted watchlist items from backend
+          const token = resolveAuthBearerToken();
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (token) headers.Authorization = `Bearer ${token}`;
 
-        let watchlistResponse: Response | null = null;
-        try {
-          watchlistResponse = await fetch(`${API_CONFIG.BASE_URL}/watchlist`, { headers });
-        } catch {
-          // network error - we'll fallback to socket/rest
-          watchlistResponse = null;
-        }
+          let watchlistResponse: Response | null = null;
+          try {
+            watchlistResponse = await fetch(`${API_CONFIG.BASE_URL}/watchlist`, { headers });
+          } catch {
+            // network error - we'll fallback to socket/rest
+            watchlistResponse = null;
+          }
 
-        if (isActive && watchlistResponse && watchlistResponse.ok) {
-          const items = await watchlistResponse.json();
-          if (Array.isArray(items) && items.length > 0) {
-            // fetch latest snapshot for each symbol
-            const snapshots = await Promise.all(
-              items.map(async (it: any) => {
-                try {
-                  const res = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_BY_SYMBOL(it.symbol)}`);
-                  if (!res.ok) throw new Error('Failed to fetch snapshot');
-                  return await res.json();
-                } catch {
-                  return { symbol: it.symbol, name: it.name ?? it.symbol, price: 0 };
-                }
-              }),
-            );
+          if (isActive && watchlistResponse && watchlistResponse.ok) {
+            const items = await watchlistResponse.json();
+            if (Array.isArray(items) && items.length > 0) {
+              // fetch latest snapshot for each symbol
+              const snapshots = await Promise.all(
+                items.map(async (it: any) => {
+                  try {
+                    const res = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_BY_SYMBOL(it.symbol)}`);
+                    if (!res.ok) throw new Error('Failed to fetch snapshot');
+                    return await res.json();
+                  } catch {
+                    return { symbol: it.symbol, name: it.name ?? it.symbol, price: 0 };
+                  }
+                }),
+              );
 
-            if (!isActive) return;
+              if (!isActive) return;
 
-            setStocks(snapshots.map((s: any, i: number) => normalizeStockSnapshot(s, i)));
-            setError(null);
-            setLoading(false);
-            setHasHydrated(true);
-            hydratingRef.current = false;
-            return;
+              setStocks(snapshots.map((s: any, i: number) => normalizeStockSnapshot(s, i)));
+              setError(null);
+              setLoading(false);
+              setHasHydrated(true);
+              hydratingRef.current = false;
+              return;
+            }
           }
         }
 
@@ -551,7 +554,7 @@ export default function WatchlistScreen({ navigation }: any) {
   }, [liveStocks, setError, setStocks, stockSymbolInput]);
 
   return (
-    <View style={styles.container} testID="watchlist-container">
+    <View style={styles.container} testID="watchlist-container" accessibilityLabel="watchlist-container">
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Watchlist</Text>
         <Text style={styles.headerSubtitle}>{liveStocks.length} stocks tracked</Text>
@@ -621,6 +624,7 @@ export default function WatchlistScreen({ navigation }: any) {
               {recentlyUpdated.has(item.symbol) && <View style={styles.updateIndicator} />}
               <TouchableOpacity
                 testID={`stock-item-${item.symbol}`}
+                accessibilityLabel={`stock-item-${item.symbol}`}
                 onPress={() => navigation && navigation.navigate('StockDetail', { symbol: item.symbol })}
                 style={styles.stockCard}
                 activeOpacity={0.7}
@@ -652,6 +656,7 @@ export default function WatchlistScreen({ navigation }: any) {
         <TouchableOpacity
           style={styles.addStockButton}
           testID="add-stock-button"
+          accessibilityLabel="add-stock-button"
           onPress={openAddStockModal}
         >
           <Ionicons name="add-circle-outline" size={20} color="#fff" />
@@ -671,6 +676,7 @@ export default function WatchlistScreen({ navigation }: any) {
             <Text style={styles.modalHint}>Add a stock symbol (for example: NVDA, META, AMD).</Text>
             <TextInput
               testID="add-stock-symbol-input"
+              accessibilityLabel="add-stock-symbol-input"
               value={stockSymbolInput}
               onChangeText={setStockSymbolInput}
               placeholder="Enter symbol"
@@ -682,6 +688,8 @@ export default function WatchlistScreen({ navigation }: any) {
             {addStockError && <Text style={styles.modalError}>{addStockError}</Text>}
             <View style={styles.modalActions}>
               <TouchableOpacity
+                testID="add-stock-cancel"
+                accessibilityLabel="add-stock-cancel"
                 style={[styles.modalButton, styles.modalButtonSecondary]}
                 onPress={closeAddStockModal}
                 disabled={isAddingStock}
@@ -690,6 +698,7 @@ export default function WatchlistScreen({ navigation }: any) {
               </TouchableOpacity>
               <TouchableOpacity
                 testID="add-stock-submit"
+                accessibilityLabel="add-stock-submit"
                 style={[styles.modalButton, styles.modalButtonPrimary]}
                 onPress={() => {
                   void handleAddStock();

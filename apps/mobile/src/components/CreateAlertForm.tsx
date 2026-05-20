@@ -185,6 +185,8 @@ export default function CreateAlertForm({ isSubmitting, onSubmit, prefilledSymbo
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Symbol</Text>
         <TextInput
+          testID="create-alert-symbol-input"
+          accessibilityLabel="create-alert-symbol-input"
           value={symbol}
           onChangeText={setSymbol}
           autoCapitalize="characters"
@@ -198,6 +200,8 @@ export default function CreateAlertForm({ isSubmitting, onSubmit, prefilledSymbo
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Target Price</Text>
         <TextInput
+          testID="create-alert-threshold-input"
+          accessibilityLabel="create-alert-threshold-input"
           value={threshold}
           onChangeText={setThreshold}
           keyboardType="decimal-pad"
@@ -212,6 +216,8 @@ export default function CreateAlertForm({ isSubmitting, onSubmit, prefilledSymbo
         <Text style={styles.conditionLabel}>Condition</Text>
         <View style={styles.conditionButtonContainer}>
           <TouchableOpacity
+            testID="create-alert-condition-above"
+            accessibilityLabel="create-alert-condition-above"
             style={[
               styles.conditionButton,
               condition === 'above' && styles.conditionButtonActive,
@@ -234,6 +240,8 @@ export default function CreateAlertForm({ isSubmitting, onSubmit, prefilledSymbo
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            testID="create-alert-condition-below"
+            accessibilityLabel="create-alert-condition-below"
             style={[
               styles.conditionButton,
               condition === 'below' && styles.conditionButtonActive,
@@ -265,6 +273,8 @@ export default function CreateAlertForm({ isSubmitting, onSubmit, prefilledSymbo
       )}
 
       <TouchableOpacity
+        testID="create-alert-submit-button"
+        accessibilityLabel="create-alert-submit-button"
         style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
         onPress={handleSubmit}
         disabled={isSubmitting}
