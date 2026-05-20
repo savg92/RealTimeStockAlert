@@ -3,7 +3,7 @@ import { ScrollView, Text, TouchableOpacity, View, StyleSheet, FlatList, Activit
 import { Ionicons } from '@expo/vector-icons';
 import { resolveAuthBearerToken } from '../services/authToken';
 import { useAppStore } from '../store/appStore';
-import type { AlertConfig } from '../types';
+import { API_CONFIG } from '../utils/api';
 
 interface AlertDispatch {
   id: string;
@@ -208,7 +208,7 @@ export default function AlertHistoryScreen() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('http://localhost:3000/dev/dispatch-history', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/dev/dispatch-history`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
