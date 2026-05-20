@@ -7,13 +7,21 @@ const parseServiceAccountFromEnv = (): ServiceAccount | null => {
 
   if (credentialsJson) {
     try {
-      const parsed = JSON.parse(credentialsJson) as ServiceAccount;
-      if (parsed.projectId && parsed.clientEmail && parsed.privateKey) {
+      const parsedRaw = JSON.parse(credentialsJson) as any;
+
+      // Support both camelCase keys (projectId) and service-account underscore keys (project_id)
+      const projectId = parsedRaw.projectId || parsedRaw.project_id;
+      const clientEmail = parsedRaw.clientEmail || parsedRaw.client_email;
+      let privateKey = parsedRaw.privateKey || parsedRaw.private_key;
+
+      if (projectId && clientEmail && privateKey) {
+        // Normalize private key if it contains literal "\\n" sequences
+        privateKey = normalizePrivateKey(privateKey);
         return {
-          projectId: parsed.projectId,
-          clientEmail: parsed.clientEmail,
-          privateKey: normalizePrivateKey(parsed.privateKey),
-        };
+          projectId,
+          clientEmail,
+          privateKey,
+        } as ServiceAccount;
       }
     } catch {
       return null;
@@ -42,9 +50,11 @@ export const initializeFirebaseAdminApp = (): App => {
 
   const serviceAccount = parseServiceAccountFromEnv();
   if (serviceAccount) {
+    console.log('[Firebase] Found service account in env. projectId=', serviceAccount.projectId);
     return initializeApp({ credential: cert(serviceAccount), projectId: serviceAccount.projectId });
   }
 
+  console.log('[Firebase] No service account in env; initializing default app');
   return initializeApp();
 };
 

@@ -6,14 +6,6 @@ export const WATCHLIST_STOCKS = [
   { symbol: 'TSLA', name: 'Tesla Inc.' },
 ] as const;
 
-export const WATCHLIST_BASE_PRICES: Record<string, number> = {
-  AAPL: 189.5,
-  MSFT: 412.3,
-  GOOGL: 138.75,
-  AMZN: 180.2,
-  TSLA: 242.5,
-};
-
 export type StockHistoryRange = '1H' | '5H' | '1D' | '5D' | '1M' | '3M' | '1Y' | '5Y' | 'ALL';
 
 export interface StockDetailSnapshot {

@@ -25,11 +25,11 @@ export class AuthGuard implements CanActivate {
         where: { firebaseId: 'dev-firebase-id-1' },
         create: {
           firebaseId: 'dev-firebase-id-1',
-          email: 'dev@test.local',
+          email: 'dev+dev-firebase-id-1@test.local',
           name: 'Development Test User',
         },
         update: {
-          email: 'dev@test.local',
+          email: 'dev+dev-firebase-id-1@test.local',
           name: 'Development Test User',
         },
       });

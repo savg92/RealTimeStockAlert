@@ -12,6 +12,8 @@ import { PinoLogger } from './common/logger/logger.service';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DevModule } from './dev/dev.module';
 import { StocksModule } from './stocks/stocks.module';
+import { WatchlistModule } from './watchlist/watchlist.module';
+import { AppInitializerService } from './app-init.service';
 
 @Module({
   imports: [
@@ -29,12 +31,14 @@ import { StocksModule } from './stocks/stocks.module';
     NotificationsModule,
     DevModule,
     StocksModule,
+    WatchlistModule,
   ],
   providers: [
     {
       provide: 'Logger',
       useClass: PinoLogger,
     },
+    AppInitializerService,
   ],
 })
 export class AppModule implements NestModule {

@@ -68,22 +68,51 @@ export class NotificationService {
     }
 
     const tokens = tokenRows.map((r) => r.token);
-    const response = await this.sendWithRetry(tokens, payload);
 
-    const invalidTokens: string[] = [];
+    // Split Expo tokens vs FCM tokens
+    const expoTokens = tokens.filter((t) => typeof t === 'string' && t.startsWith('ExponentPushToken')) as string[];
+    const fcmTokens = tokens.filter((t) => typeof t === 'string' && !t.startsWith('ExponentPushToken')) as string[];
+
     let sentCount = 0;
+    const invalidTokens: string[] = [];
 
-    response.responses.forEach((res, index) => {
-      if (res.success) {
-        sentCount += 1;
-      } else {
-        const code = this.readMessagingErrorCode(res.error);
-        if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
-          invalidTokens.push(tokens[index]);
-        }
-        this.logger.warn(`Failed to send push notification for token. code=${code ?? 'unknown'}`);
+    // Send Expo push notifications (batching up to 100)
+    if (expoTokens.length > 0) {
+      try {
+        const expoSent = await this.sendExpoPushes(expoTokens, payload);
+        sentCount += expoSent.successCount;
+        invalidTokens.push(...expoSent.invalidTokens);
+      } catch (e) {
+        this.logger.warn('Failed to send Expo push notifications', e as any);
       }
-    });
+    }
+
+    // Send FCM notifications via Firebase if available
+    if (fcmTokens.length > 0) {
+      if (!this.messaging) {
+        // Messaging disabled: mark as skipped
+        return {
+          attemptedCount: tokens.length,
+          sentCount,
+          skipped: true,
+          reason: 'Firebase Messaging is disabled for this environment',
+        };
+      }
+
+      const response = await this.sendWithRetry(fcmTokens, payload);
+
+      response.responses.forEach((res, index) => {
+        if (res.success) {
+          sentCount += 1;
+        } else {
+          const code = this.readMessagingErrorCode(res.error);
+          if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+            invalidTokens.push(fcmTokens[index]);
+          }
+          this.logger.warn(`Failed to send push notification for token. code=${code ?? 'unknown'}`);
+        }
+      });
+    }
 
     if (invalidTokens.length) {
       await this.prisma.fcmToken.deleteMany({
@@ -92,10 +121,69 @@ export class NotificationService {
     }
 
     return {
-      attemptedCount: tokenRows.length,
+      attemptedCount: tokens.length,
       sentCount,
       skipped: false,
     };
+  }
+
+  private async sendExpoPushes(tokens: string[], payload: NotificationPayload): Promise<{ successCount: number; invalidTokens: string[] }> {
+    const EXPO_ENDPOINT = 'https://exp.host/--/api/v2/push/send';
+    const chunkSize = 100;
+    let successCount = 0;
+    const invalidTokens: string[] = [];
+
+    for (let i = 0; i < tokens.length; i += chunkSize) {
+      const chunk = tokens.slice(i, i + chunkSize);
+      const messages = chunk.map((t) => ({
+        to: t,
+        title: payload.title,
+        body: payload.body,
+        data: payload.data ?? {},
+      }));
+
+      try {
+        const res = await (globalThis as any).fetch(EXPO_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(messages),
+        });
+
+        if (!res.ok) {
+          this.logger.warn(`Expo push returned ${res.status}`);
+          continue;
+        }
+
+        const json = await res.json();
+        // json should be { data: [ { status: 'ok'|'error', id?, message?, details? }, ... ] }
+        const data = Array.isArray(json) ? json : json.data ?? [];
+        // The Expo push API sometimes returns an array directly or a {data: [...]} wrapper
+        const results = Array.isArray(data) && data.length ? data : json;
+
+        // Try to interpret results
+        if (Array.isArray(results)) {
+          results.forEach((r: any, idx: number) => {
+            if (r.status === 'ok') {
+              successCount += 1;
+            } else if (r.status === 'error') {
+              const token = chunk[idx];
+              const detail = r.details ?? r.message ?? null;
+              // If error indicates unregistered token, mark invalid
+              if (typeof detail === 'object' && detail?.error === 'DeviceNotRegistered') {
+                invalidTokens.push(token);
+              }
+            }
+          });
+        }
+      } catch (err) {
+        this.logger.warn('Error sending Expo pushes', err as any);
+      }
+    }
+
+    return { successCount, invalidTokens };
   }
 
   private async sendWithRetry(tokens: string[], payload: NotificationPayload) {
@@ -114,7 +202,19 @@ export class NotificationService {
         });
       } catch (error) {
         lastError = error;
-        this.logger.warn(`Push notification attempt ${attempt} failed`);
+        // Log detailed error for debugging Firebase/FCM issues in development
+        if (error instanceof Error) {
+          this.logger.warn(`Push notification attempt ${attempt} failed: ${error.message}`);
+          this.logger.debug(error.stack ?? 'no-stack');
+        } else {
+          try {
+            this.logger.warn(
+              `Push notification attempt ${attempt} failed: ${JSON.stringify(error)}`,
+            );
+          } catch {
+            this.logger.warn(`Push notification attempt ${attempt} failed: (non-serializable error)`);
+          }
+        }
       }
     }
 

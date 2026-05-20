@@ -8,5 +8,6 @@ import { AlertsService } from './alerts.service';
   imports: [PrismaModule, AuthModule],
   controllers: [AlertsController],
   providers: [AlertsService],
+  exports: [AlertsService],
 })
 export class AlertsModule {}

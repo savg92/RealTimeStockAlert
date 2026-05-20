@@ -1,4 +1,5 @@
 import { API_CONFIG, API_ENDPOINTS } from '../utils/api';
+import { resolveAuthBearerToken } from './authToken';
 
 type PermissionStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -121,7 +122,7 @@ export class PushNotificationManager {
 }
 
 const readAuthBearer = (): string | undefined => {
-  return process.env['EXPO_PUBLIC_AUTH_BEARER_TOKEN']?.trim();
+  return resolveAuthBearerToken() ?? undefined;
 };
 
 const buildAuthHeaders = (bearer?: string): HeadersInit => {

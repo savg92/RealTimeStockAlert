@@ -2,6 +2,9 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../store/appStore';
+import * as Notifications from 'expo-notifications';
+import { API_CONFIG } from '../utils/api';
+import { resolveAuthBearerToken } from '../services/authToken';
 
 const styles = StyleSheet.create({
   container: {
@@ -228,6 +231,54 @@ export default function SettingsScreen() {
             isSwitch
             icon="phone-portrait-outline"
           />
+
+          <TouchableOpacity
+            testID="get-fcm-token-button"
+            style={[styles.button, styles.primaryButton]}
+            onPress={async () => {
+              try {
+                const perm = await Notifications.requestPermissionsAsync();
+                const granted = perm?.status === 'granted' || perm?.granted === true;
+                if (!granted) {
+                  console.log('Push permission not granted', perm);
+                  Alert.alert('Permission required', 'Push permission not granted');
+                  return;
+                }
+
+                const tokenObj = await Notifications.getDevicePushTokenAsync();
+                const token = (tokenObj as any)?.data ?? (tokenObj as any)?.token ?? String(tokenObj);
+                console.log('FCM token:', token);
+
+                const bearer = resolveAuthBearerToken();
+                if (bearer) {
+                  try {
+                    await fetch(`${API_CONFIG.BASE_URL}/notifications/token`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${bearer}`,
+                      },
+                      body: JSON.stringify({ token }),
+                    });
+                    Alert.alert('Token registered', 'Device token registered with backend');
+                    console.log('Registered token with backend');
+                  } catch (e) {
+                    console.log('Failed to register token with backend', e);
+                    Alert.alert('Registration failed', String(e));
+                  }
+                } else {
+                  console.log('No auth token available; skipping backend register');
+                  Alert.alert('No auth token', 'Sign in or provide a bearer token to register');
+                }
+              } catch (error) {
+                console.log('Failed to get device token', error);
+                Alert.alert('Error', String(error));
+              }
+            }}
+          >
+            <Ionicons name="notifications-outline" size={18} color="#fff" />
+            <Text style={styles.buttonText}>Get FCM token</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Display Section */}

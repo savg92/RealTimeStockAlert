@@ -56,6 +56,26 @@
 4. **Alert Evaluation**: Alert engine evaluates all active user alerts against price ticks, records `AlertDispatch` events.
 5. **Notification Dispatch**: Notification service sends FCM push notifications to registered user tokens, handles invalid tokens (cleanup).
 
+## Historical data caching (chart history)
+
+- Purpose: reliably serve recent historical candle data for charts even when Finnhub's candle endpoint is temporarily unavailable, without inventing or synthesizing values.
+
+- Flow:
+  1. When the backend successfully receives historical candles from Finnhub for a symbol+range, it caches the normalized array of points in Redis under the key:
+     - `stocks:history:<SYMBOL>:<RANGE>`
+  2. The cache entry TTL is 24 hours (86400 seconds). The cache is updated whenever a fresh successful candle response is received.
+  3. On an incoming REST request to `/stocks/:symbol/history?range=...`, the backend:
+     - attempts to fetch candles from Finnhub (preferred, authoritative source),
+     - on success it returns the candles and writes them to the Redis cache,
+     - if Finnhub returns no candles (or an error) the service attempts to read the cached payload and return it as the "last known" history,
+     - if neither live candles nor a cached payload exist, the endpoint returns `503 Service Unavailable` with a clear message — the system does not fabricate or interpolate data.
+
+- Guarantees & notes:
+  - No synthetic history: the backend will never invent candle points when both live and cached data are missing.
+  - Cache semantics: cached history is a best-effort, last-known snapshot; it is suitable for displaying a chart that reflects the most recent known shape, but it is explicitly not a substitute for live market data.
+  - Redis dependency: the cache requires a functioning Redis client (configured via `REDIS_URL`). If Redis is down, the backend continues to use Finnhub but cannot provide cached fallbacks.
+  - Instrumentation: cache reads/writes are logged at WARN level for failures and at DEBUG/INFO for successful cache writes; these logs should be included in incident runbooks to detect when upstream candle coverage is missing.
+
 ## Reliability and fallback behavior
 
 - Finnhub client uses heartbeat checks and exponential reconnect backoff.

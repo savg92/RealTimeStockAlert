@@ -18,6 +18,8 @@ export const API_ENDPOINTS = {
   STOCKS: '/stocks',
   STOCK_BY_SYMBOL: (symbol: string) => `/stocks/${symbol}`,
   STOCK_PRICES: '/stocks/prices',
+  STOCK_DETAILS: (symbol: string) => `/stocks/${symbol}/details`,
+  STOCK_HISTORY: (symbol: string, range = '1D') => `/stocks/${symbol}/history?range=${encodeURIComponent(range)}`,
   
   // Alert endpoints
   ALERTS: '/alerts',

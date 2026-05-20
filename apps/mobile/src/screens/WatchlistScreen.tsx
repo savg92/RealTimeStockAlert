@@ -1,9 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Modal,
+  TextInput,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../store/appStore';
 import { useSocket } from '../hooks/useSocket';
 import type { Stock } from '../types';
+import { API_CONFIG, API_ENDPOINTS } from '../utils/api';
+import { resolveAuthBearerToken } from '../services/authToken';
 
 const normalizeStockSnapshot = (item: unknown, fallbackIndex: number): Stock => {
   const candidate = item as Partial<Stock> & { id?: string; lastUpdated?: string | Date };
@@ -23,6 +34,8 @@ const normalizeStockSnapshot = (item: unknown, fallbackIndex: number): Stock => 
     lastUpdated: candidate.lastUpdated ? new Date(candidate.lastUpdated) : new Date(),
   };
 };
+
+const STOCK_SYMBOL_REGEX = /^[A-Z][A-Z0-9.-]{0,9}$/;
 
 const styles = StyleSheet.create({
   container: {
@@ -188,6 +201,71 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 6,
+  },
+  modalHint: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginBottom: 10,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#1a1a1a',
+    marginBottom: 10,
+  },
+  modalError: {
+    fontSize: 12,
+    color: '#b02a37',
+    marginBottom: 10,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  modalButtonPrimary: {
+    backgroundColor: '#007bff',
+  },
+  modalButtonSecondary: {
+    backgroundColor: '#e9ecef',
+  },
+  modalButtonTextPrimary: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  modalButtonTextSecondary: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#495057',
+  },
 });
 
 export default function WatchlistScreen({ navigation }: any) {
@@ -214,6 +292,10 @@ export default function WatchlistScreen({ navigation }: any) {
   const [recentlyUpdated, setRecentlyUpdated] = React.useState<Set<string>>(new Set());
   const [hasHydrated, setHasHydrated] = React.useState(false);
   const [refreshTick, setRefreshTick] = React.useState(0);
+  const [isAddStockModalVisible, setIsAddStockModalVisible] = React.useState(false);
+  const [stockSymbolInput, setStockSymbolInput] = React.useState('');
+  const [isAddingStock, setIsAddingStock] = React.useState(false);
+  const [addStockError, setAddStockError] = React.useState<string | null>(null);
   const hydratingRef = React.useRef(false);
 
   const liveStocks = Array.isArray(stocks) ? stocks : [];
@@ -259,16 +341,58 @@ export default function WatchlistScreen({ navigation }: any) {
         return;
       }
 
-      if (typeof socket?.fetchPricesViaRest !== 'function') {
-        setError('Live prices are unavailable right now.');
-        setLoading(false);
-        setHasHydrated(true);
-        return;
-      }
-
       try {
         hydratingRef.current = true;
         setLoading(true);
+
+        // First try to load persisted watchlist items from backend
+        const token = resolveAuthBearerToken();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers.Authorization = `Bearer ${token}`;
+
+        let watchlistResponse: Response | null = null;
+        try {
+          watchlistResponse = await fetch(`${API_CONFIG.BASE_URL}/watchlist`, { headers });
+        } catch (err) {
+          // network error - we'll fallback to socket/rest
+          watchlistResponse = null;
+        }
+
+        if (isActive && watchlistResponse && watchlistResponse.ok) {
+          const items = await watchlistResponse.json();
+          if (Array.isArray(items) && items.length > 0) {
+            // fetch latest snapshot for each symbol
+            const snapshots = await Promise.all(
+              items.map(async (it: any, idx: number) => {
+                try {
+                  const res = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_BY_SYMBOL(it.symbol)}`);
+                  if (!res.ok) throw new Error('Failed to fetch snapshot');
+                  return await res.json();
+                } catch (e) {
+                  return { symbol: it.symbol, name: it.name ?? it.symbol, price: 0 };
+                }
+              }),
+            );
+
+            if (!isActive) return;
+
+            setStocks(snapshots.map((s: any, i: number) => normalizeStockSnapshot(s, i)));
+            setError(null);
+            setLoading(false);
+            setHasHydrated(true);
+            hydratingRef.current = false;
+            return;
+          }
+        }
+
+        // Fallback: use socket.fetchPricesViaRest if available
+        if (typeof socket?.fetchPricesViaRest !== 'function') {
+          setError('Live prices are unavailable right now.');
+          setLoading(false);
+          setHasHydrated(true);
+          return;
+        }
+
         const snapshot = await socket.fetchPricesViaRest();
 
         if (!isActive) {
@@ -354,6 +478,77 @@ export default function WatchlistScreen({ navigation }: any) {
       socket.off?.('price:update', handlePriceUpdate);
     };
   }, [socket, liveStocks, updateStock]);
+
+  const closeAddStockModal = React.useCallback(() => {
+    if (isAddingStock) {
+      return;
+    }
+    setIsAddStockModalVisible(false);
+    setStockSymbolInput('');
+    setAddStockError(null);
+  }, [isAddingStock]);
+
+  const openAddStockModal = React.useCallback(() => {
+    setIsAddStockModalVisible(true);
+    setStockSymbolInput('');
+    setAddStockError(null);
+  }, []);
+
+  const handleAddStock = React.useCallback(async () => {
+    const symbol = stockSymbolInput.trim().toUpperCase();
+
+    if (!STOCK_SYMBOL_REGEX.test(symbol)) {
+      setAddStockError('Enter a valid stock symbol (letters/numbers, max 10 chars).');
+      return;
+    }
+
+    if (liveStocks.some((stock: Stock) => stock.symbol === symbol)) {
+      setAddStockError(`${symbol} is already in your watchlist.`);
+      return;
+    }
+
+    setIsAddingStock(true);
+    setAddStockError(null);
+
+    try {
+      // Fetch snapshot from backend first
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_BY_SYMBOL(symbol)}`);
+      if (!response.ok) {
+        throw new Error(`Unable to add ${symbol} right now.`);
+      }
+
+      const snapshot = (await response.json()) as unknown;
+      const normalizedStock = normalizeStockSnapshot(snapshot, liveStocks.length);
+
+      // Try to persist to backend watchlist if possible
+      const token = resolveAuthBearerToken();
+      if (token) {
+        try {
+          await fetch(`${API_CONFIG.BASE_URL}/watchlist`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ symbol: normalizedStock.symbol, name: normalizedStock.name }),
+          });
+        } catch (err) {
+          // Non-fatal: still add locally
+        }
+      }
+
+      setStocks([...liveStocks, normalizedStock]);
+      setError(null);
+      setIsAddStockModalVisible(false);
+      setStockSymbolInput('');
+    } catch (loadError) {
+      setAddStockError(
+        loadError instanceof Error ? loadError.message : `Unable to add ${symbol} right now.`,
+      );
+    } finally {
+      setIsAddingStock(false);
+    }
+  }, [liveStocks, setError, setStocks, stockSymbolInput]);
 
   return (
     <View style={styles.container} testID="watchlist-container">
@@ -457,14 +652,58 @@ export default function WatchlistScreen({ navigation }: any) {
         <TouchableOpacity
           style={styles.addStockButton}
           testID="add-stock-button"
-          onPress={() => {
-            Alert.alert('Watchlist editing', 'Custom stock management will be added in the next update.');
-          }}
+          onPress={openAddStockModal}
         >
           <Ionicons name="add-circle-outline" size={20} color="#fff" />
           <Text style={styles.addStockButtonText}>Add Stock</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={isAddStockModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeAddStockModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Add Stock</Text>
+            <Text style={styles.modalHint}>Add a stock symbol (for example: NVDA, META, AMD).</Text>
+            <TextInput
+              testID="add-stock-symbol-input"
+              value={stockSymbolInput}
+              onChangeText={setStockSymbolInput}
+              placeholder="Enter symbol"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!isAddingStock}
+              style={styles.modalInput}
+            />
+            {addStockError && <Text style={styles.modalError}>{addStockError}</Text>}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSecondary]}
+                onPress={closeAddStockModal}
+                disabled={isAddingStock}
+              >
+                <Text style={styles.modalButtonTextSecondary}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID="add-stock-submit"
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={() => {
+                  void handleAddStock();
+                }}
+                disabled={isAddingStock}
+              >
+                <Text style={styles.modalButtonTextPrimary}>
+                  {isAddingStock ? 'Adding…' : 'Add'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

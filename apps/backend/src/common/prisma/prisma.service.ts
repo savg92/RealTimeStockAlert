@@ -27,6 +27,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   readonly alert: any;
   readonly alertDispatch: any;
   readonly fcmToken: any;
+  readonly watchlistItem: any;
   readonly $transaction: any;
 
   constructor() {
@@ -44,6 +45,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       this.alert = client.alert;
       this.alertDispatch = client.alertDispatch;
       this.fcmToken = client.fcmToken;
+      this.watchlistItem = client.watchlistItem;
       this.$transaction = client.$transaction.bind(client);
       return;
     }
@@ -53,6 +55,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.alert = createUnavailableModel('alert');
     this.alertDispatch = createUnavailableModel('alertDispatch');
     this.fcmToken = createUnavailableModel('fcmToken');
+    this.watchlistItem = createUnavailableModel('watchlistItem');
     this.$transaction = createUnavailableModel('$transaction');
   }
 

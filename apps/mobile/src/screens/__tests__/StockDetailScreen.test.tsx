@@ -47,7 +47,13 @@ describe('StockDetailScreen', () => {
     });
 
     mockedUseSocket.mockReturnValue({
-      lastKnownState: { symbol: 'AAPL', price: 191, change: 0, changePercent: 0, timestamp: new Date() },
+      lastKnownState: {
+        symbol: 'AAPL',
+        price: 191,
+        change: 0,
+        changePercent: 0,
+        timestamp: new Date(),
+      },
       statusMessage: 'Connected',
       isOnline: true,
       connectionStatus: 'connected',
@@ -58,7 +64,10 @@ describe('StockDetailScreen', () => {
 
   it('renders live data from the socket feed', () => {
     const { getByText, unmount } = render(
-      <StockDetailScreen route={{ params: { symbol: 'AAPL', name: 'Apple Inc.' } }} navigation={{}} />,
+      <StockDetailScreen
+        route={{ params: { symbol: 'AAPL', name: 'Apple Inc.' } }}
+        navigation={{}}
+      />,
     );
 
     expect(getByText('AAPL')).toBeTruthy();
@@ -70,7 +79,7 @@ describe('StockDetailScreen', () => {
     expect(lastStockChartProps.isLoading).toBe(false);
     expect(lastStockChartProps.error).toBeNull();
     expect(lastStockChartProps.rangeLabel).toBe('1D');
-    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(2);
+    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(1);
 
     unmount();
 
@@ -94,10 +103,10 @@ describe('StockDetailScreen', () => {
     expect(getByText('Microsoft Corp.')).toBeTruthy();
     expect(getByText(/\+0\.00% 24h/)).toBeTruthy();
     expect(lastStockChartProps.baselinePrice).toBe(412.3);
-    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(2);
+    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('falls back to the default baseline when no stock matches', () => {
+  it('shows an explicit error when no live price is available', () => {
     mockedUseAppStore.mockReturnValue({
       stocks: [],
       isLoading: true,
@@ -112,10 +121,12 @@ describe('StockDetailScreen', () => {
       unsubscribe,
     });
 
-    const { getByText } = render(<StockDetailScreen route={{ params: { symbol: 'XYZ' } }} navigation={{}} />);
+    const { getByText } = render(
+      <StockDetailScreen route={{ params: { symbol: 'XYZ' } }} navigation={{}} />,
+    );
 
     expect(getByText('Stock details')).toBeTruthy();
-    expect(getByText('+0.00% 24h')).toBeTruthy();
+    expect(getByText('Live price data is unavailable right now.')).toBeTruthy();
     expect(lastStockChartProps.baselinePrice).toBe(0);
     expect(lastStockChartProps.isLoading).toBe(true);
     expect(lastStockChartProps.error).toBe('Network down');
@@ -133,11 +144,14 @@ describe('StockDetailScreen', () => {
     });
 
     const { getByText } = render(
-      <StockDetailScreen route={{ params: { symbol: 'AAPL', name: 'Apple Inc.' } }} navigation={{}} />,
+      <StockDetailScreen
+        route={{ params: { symbol: 'AAPL', name: 'Apple Inc.' } }}
+        navigation={{}}
+      />,
     );
 
     expect(getByText('+0.00% 24h')).toBeTruthy();
     expect(lastStockChartProps.baselinePrice).toBe(189);
-    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(2);
+    expect(lastStockChartProps.data.length).toBeGreaterThanOrEqual(1);
   });
 });

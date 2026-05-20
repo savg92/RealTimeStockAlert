@@ -41,12 +41,26 @@ if (!javaHome) {
 
 const adb = path.join(sdkRoot, 'platform-tools', 'adb');
 const emulator = path.join(sdkRoot, 'emulator', 'emulator');
+const localPropertiesPath = path.join(process.cwd(), 'android', 'local.properties');
 
 const run = (command, args) => execFileSync(command, args, { encoding: 'utf8' });
 const commandEnv = {
   ...process.env,
   ...(javaHome ? { JAVA_HOME: javaHome } : {}),
   ...(javaHome ? { PATH: `${path.join(javaHome, 'bin')}:${process.env.PATH || ''}` } : {}),
+};
+
+const ensureAndroidLocalProperties = () => {
+  const expectedLine = `sdk.dir=${sdkRoot}`;
+
+  if (fs.existsSync(localPropertiesPath)) {
+    const current = fs.readFileSync(localPropertiesPath, 'utf8').trim();
+    if (current.includes(expectedLine)) {
+      return;
+    }
+  }
+
+  fs.writeFileSync(localPropertiesPath, `${expectedLine}\n`, 'utf8');
 };
 
 const listConnectedDevices = () => {
@@ -122,6 +136,7 @@ const startEmulatorIfNeeded = async () => {
 };
 
 const main = async () => {
+  ensureAndroidLocalProperties();
   await startEmulatorIfNeeded();
 
   if (mode === 'dev') {

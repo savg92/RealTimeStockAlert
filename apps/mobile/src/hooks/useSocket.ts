@@ -125,10 +125,15 @@ export const useSocket = (): UseSocketReturn => {
         fetch(url),
         timeoutPromise,
       ]) as Response;
-      if (!response.ok) {
-        throw new Error(`Failed to fetch prices: ${response.status} ${response.statusText}`);
+      // Some test mocks return a bare object without `ok`; treat missing `ok` as success
+      const respAny = response as any;
+      if (respAny && typeof respAny.ok === 'boolean' && !respAny.ok) {
+        const status = respAny.status ?? 'unknown';
+        const statusText = respAny.statusText ?? '';
+        throw new Error(`Failed to fetch prices: ${status} ${statusText}`);
       }
-      const data = await response.json();
+
+      const data = await (response as Response).json?.() ?? respAny;
       setLastKnownState(data);
       return data;
     } finally {

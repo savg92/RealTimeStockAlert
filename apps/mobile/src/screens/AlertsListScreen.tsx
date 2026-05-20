@@ -5,15 +5,11 @@ import CreateAlertForm, { type CreateAlertFormPayload } from '../components/Crea
 import { useAppStore } from '../store/appStore';
 import type { AlertConfig } from '../types';
 import { createAlert, deleteAlert, fetchAlerts } from '../services/alertsApi';
+import { resolveAuthBearerToken } from '../services/authToken';
 
 export const authTokenResolver = {
   getAuthToken: (): string | null => {
-    const token = process.env.EXPO_PUBLIC_AUTH_BEARER_TOKEN;
-    if (!token || !token.trim()) {
-      return null;
-    }
-
-    return token.trim();
+    return resolveAuthBearerToken();
   },
 };
 

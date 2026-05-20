@@ -30,6 +30,6 @@ const firebaseAdminMessagingProvider = {
   imports: [PrismaModule, AuthModule, RedisModule],
   providers: [firebaseAdminMessagingProvider, NotificationService, AlertEngineService],
   controllers: [NotificationsController],
-  exports: [NotificationService],
+  exports: [NotificationService, AlertEngineService],
 })
 export class NotificationsModule {}
