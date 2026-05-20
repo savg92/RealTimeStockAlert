@@ -156,10 +156,11 @@ export const validateCreateAlertForm = (
 interface CreateAlertFormProps {
   isSubmitting: boolean;
   onSubmit: (payload: CreateAlertFormPayload, condition: AlertCondition) => Promise<void>;
+  prefilledSymbol?: string;
 }
 
-export default function CreateAlertForm({ isSubmitting, onSubmit }: CreateAlertFormProps) {
-  const [symbol, setSymbol] = React.useState('');
+export default function CreateAlertForm({ isSubmitting, onSubmit, prefilledSymbol }: CreateAlertFormProps) {
+  const [symbol, setSymbol] = React.useState(prefilledSymbol ?? '');
   const [threshold, setThreshold] = React.useState('');
   const [condition, setCondition] = React.useState<AlertCondition>('above');
   const [formError, setFormError] = React.useState<string | null>(null);

@@ -34,7 +34,9 @@ export type RootStackParamList = {
 export type TabParamList = {
   Home: undefined;
   Watchlist: undefined;
-  Alerts: undefined;
+  Alerts: {
+    symbol?: string;
+  };
   Settings: undefined;
 };
 

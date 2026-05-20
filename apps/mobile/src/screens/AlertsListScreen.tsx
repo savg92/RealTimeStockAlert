@@ -1,11 +1,16 @@
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AlertCondition, CreateAlertInput } from '@stock-alert/shared';
+import type { TabParamList } from '../../App';
 import CreateAlertForm, { type CreateAlertFormPayload } from '../components/CreateAlertForm';
 import { useAppStore } from '../store/appStore';
 import type { AlertConfig } from '../types';
 import { createAlert, deleteAlert, fetchAlerts } from '../services/alertsApi';
 import { resolveAuthBearerToken } from '../services/authToken';
+
+type AlertsListScreenProps = NativeStackScreenProps<TabParamList, 'Alerts'>;
 
 export const authTokenResolver = {
   getAuthToken: (): string | null => {
@@ -27,7 +32,7 @@ const buildOptimisticAlert = (
   updatedAt: new Date().toISOString(),
 });
 
-export default function AlertsListScreen() {
+export default function AlertsListScreen({ route }: AlertsListScreenProps) {
   const {
     alerts,
     setAlerts,
@@ -38,8 +43,10 @@ export default function AlertsListScreen() {
   } = useAppStore();
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const token = React.useMemo(() => authTokenResolver.getAuthToken(), []);
+  const prefilledSymbol = route.params?.symbol;
 
   const loadAlerts = React.useCallback(async () => {
     if (!token) {
@@ -59,9 +66,12 @@ export default function AlertsListScreen() {
     }
   }, [setAlerts, setError, token]);
 
-  React.useEffect(() => {
-    void loadAlerts();
-  }, [loadAlerts]);
+  // Load alerts when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      void loadAlerts();
+    }, [loadAlerts]),
+  );
 
   const handleCreateAlert = React.useCallback(
     async (payload: CreateAlertFormPayload, condition: AlertCondition) => {
@@ -120,10 +130,20 @@ export default function AlertsListScreen() {
     [addAlert, alerts, removeAlert, setError, token],
   );
 
+  const handleRefresh = React.useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadAlerts();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadAlerts]);
+
   return (
     <ScrollView 
       style={{ flex: 1, backgroundColor: '#f8f9fa' }}
       contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 24 }}
+      refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
     >
       {/* Header */}
       <View style={{ marginBottom: 24 }}>
@@ -136,7 +156,11 @@ export default function AlertsListScreen() {
       </View>
 
       {/* Create Alert Form */}
-      <CreateAlertForm isSubmitting={isSubmitting} onSubmit={handleCreateAlert} />
+      <CreateAlertForm 
+        isSubmitting={isSubmitting} 
+        onSubmit={handleCreateAlert}
+        prefilledSymbol={prefilledSymbol}
+      />
 
       {/* Active Alerts Section */}
       <View style={{ marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

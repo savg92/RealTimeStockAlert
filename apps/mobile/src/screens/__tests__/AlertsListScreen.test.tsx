@@ -4,6 +4,17 @@ import AlertsListScreen, { authTokenResolver } from '../AlertsListScreen';
 import { useAppStore } from '../../store/appStore';
 import { createAlert, deleteAlert, fetchAlerts } from '../../services/alertsApi';
 
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native');
+  return {
+    ...actual,
+    useFocusEffect: (callback: () => void) => {
+      const React = require('react');
+      React.useEffect(callback, []);
+    },
+  };
+});
+
 jest.mock('../../services/alertsApi', () => ({
   fetchAlerts: jest.fn(),
   createAlert: jest.fn(),
@@ -14,15 +25,18 @@ jest.mock('../../components/CreateAlertForm', () => {
   return function MockCreateAlertForm({
     isSubmitting,
     onSubmit,
+    prefilledSymbol,
   }: {
     isSubmitting: boolean;
     onSubmit: (payload: { symbol: string; threshold: number }, condition: 'above' | 'below') => Promise<void>;
+    prefilledSymbol?: string;
   }) {
     const ReactNative = require('react-native');
 
     return (
       <ReactNative.View>
         <ReactNative.Text>{isSubmitting ? 'Creating…' : 'Create Mock Alert'}</ReactNative.Text>
+        {prefilledSymbol && <ReactNative.Text>Prefilled: {prefilledSymbol}</ReactNative.Text>}
         <ReactNative.TouchableOpacity
           testID="create-mock-alert"
           onPress={() => onSubmit({ symbol: 'AAPL', threshold: 200 }, 'above')}
@@ -52,6 +66,12 @@ describe('AlertsListScreen', () => {
     updatedAt: now,
   };
 
+  const mockRoute = {
+    params: undefined,
+    name: 'Alerts',
+    key: 'Alerts-key',
+  } as any;
+
   beforeEach(() => {
     jest.clearAllMocks();
     useAppStore.getState().reset();
@@ -65,7 +85,7 @@ describe('AlertsListScreen', () => {
   it('loads alerts, refreshes them, and renders the empty state', async () => {
     mockedFetchAlerts.mockResolvedValue([]);
 
-    const { getByText } = render(<AlertsListScreen />);
+    const { getByText } = render(<AlertsListScreen route={mockRoute} />);
 
     await waitFor(() => expect(getByText('No active alerts yet.')).toBeTruthy());
     expect(mockedFetchAlerts).toHaveBeenCalledWith('token-123');
@@ -78,7 +98,7 @@ describe('AlertsListScreen', () => {
     getAuthTokenSpy.mockReturnValue(null);
     mockedFetchAlerts.mockResolvedValue([]);
 
-    const { getByText } = render(<AlertsListScreen />);
+    const { getByText } = render(<AlertsListScreen route={mockRoute} />);
 
     await waitFor(() => {
       expect(getByText('Missing auth token. Set EXPO_PUBLIC_AUTH_BEARER_TOKEN.')).toBeTruthy();
@@ -89,7 +109,7 @@ describe('AlertsListScreen', () => {
   it('shows a default message when loading alerts throws a non-Error value', async () => {
     mockedFetchAlerts.mockRejectedValue('boom');
 
-    const { getByText } = render(<AlertsListScreen />);
+    const { getByText } = render(<AlertsListScreen route={mockRoute} />);
 
     await waitFor(() => expect(getByText('Failed to load alerts.')).toBeTruthy());
   });
@@ -107,7 +127,7 @@ describe('AlertsListScreen', () => {
       updatedAt: now,
     });
 
-    const { getByTestId, getByText } = render(<AlertsListScreen />);
+    const { getByTestId, getByText } = render(<AlertsListScreen route={mockRoute} />);
 
     await waitFor(() => expect(getByText('No active alerts yet.')).toBeTruthy());
     fireEvent.press(getByTestId('create-mock-alert'));
@@ -132,7 +152,7 @@ describe('AlertsListScreen', () => {
     mockedFetchAlerts.mockResolvedValue([]);
     mockedCreateAlert.mockRejectedValue(new Error('Create failed'));
 
-    const { getByTestId, getByText, queryByText } = render(<AlertsListScreen />);
+    const { getByTestId, getByText, queryByText } = render(<AlertsListScreen route={mockRoute} />);
 
     await waitFor(() => expect(getByText('No active alerts yet.')).toBeTruthy());
     fireEvent.press(getByTestId('create-mock-alert'));
@@ -146,7 +166,7 @@ describe('AlertsListScreen', () => {
     getAuthTokenSpy.mockReturnValue(null);
     mockedFetchAlerts.mockResolvedValue([]);
 
-    const { getByTestId, getByText } = render(<AlertsListScreen />);
+    const { getByTestId, getByText } = render(<AlertsListScreen route={mockRoute} />);
 
     await waitFor(() => {
       expect(getByText('Missing auth token. Set EXPO_PUBLIC_AUTH_BEARER_TOKEN.')).toBeTruthy();
@@ -161,7 +181,7 @@ describe('AlertsListScreen', () => {
     mockedFetchAlerts.mockResolvedValue([alert]);
     mockedDeleteAlert.mockResolvedValue();
 
-    const { getByText, queryByText } = render(<AlertsListScreen />);
+    const { getByText, queryByText } = render(<AlertsListScreen route={mockRoute} />);
 
     await waitFor(() => expect(getByText('Trigger when AAPL is above $200.00')).toBeTruthy());
     fireEvent.press(getByText('Delete alert'));
@@ -176,7 +196,7 @@ describe('AlertsListScreen', () => {
     mockedFetchAlerts.mockResolvedValue([alert]);
     mockedDeleteAlert.mockRejectedValue(new Error('Delete failed'));
 
-    const { getByText } = render(<AlertsListScreen />);
+    const { getByText } = render(<AlertsListScreen route={mockRoute} />);
 
     await waitFor(() => expect(getByText('Trigger when AAPL is above $200.00')).toBeTruthy());
     fireEvent.press(getByText('Delete alert'));
@@ -190,7 +210,7 @@ describe('AlertsListScreen', () => {
     getAuthTokenSpy.mockReturnValue(null);
     useAppStore.getState().setAlerts([alert]);
 
-    const { getByText } = render(<AlertsListScreen />);
+    const { getByText } = render(<AlertsListScreen route={mockRoute} />);
 
     fireEvent.press(getByText('Delete alert'));
 
