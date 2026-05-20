@@ -5,13 +5,10 @@ import CombinedStocksChart from '../components/CombinedStocksChart';
 function HomeScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.container}>
-
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Welcome!</Text>
-        <Text style={styles.description}>
-          Use the tabs below to navigate through the app:
-        </Text>
-        
+        <Text style={styles.description}>Use the tabs below to navigate through the app:</Text>
+
         <View style={styles.featureList}>
           <Text style={styles.feature}>📊 Home - Overview and quick stats</Text>
           <Text style={styles.feature}>📈 Watchlist - Track your favorite stocks</Text>

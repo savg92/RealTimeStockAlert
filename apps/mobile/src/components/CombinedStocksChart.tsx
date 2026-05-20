@@ -141,10 +141,14 @@ export const buildCombinedStocksChartModel = (
     return null;
   }
 
-  const allTimestamps = normalizedSeries.flatMap((item) => item.points.map((point) => point.timestampMs));
+  const allTimestamps = normalizedSeries.flatMap((item) =>
+    item.points.map((point) => point.timestampMs),
+  );
   const allPercents = normalizedSeries.flatMap((item) => {
     const basePrice = item.points[0].price;
-    return item.points.map((point) => (basePrice === 0 ? 0 : ((point.price - basePrice) / basePrice) * 100));
+    return item.points.map((point) =>
+      basePrice === 0 ? 0 : ((point.price - basePrice) / basePrice) * 100,
+    );
   });
 
   const xMin = Math.min(...allTimestamps);
@@ -174,10 +178,14 @@ export const buildCombinedStocksChartModel = (
 
   const seriesModel = normalizedSeries.map((item) => {
     const normalizedPoints = item.points.map((point) => {
-      const x = xMin === xMax
-        ? leftPadding + innerWidth / 2
-        : leftPadding + ((point.timestampMs - xMin) / timeSpan) * innerWidth;
-      const percent = item.points[0].price === 0 ? 0 : ((point.price - item.points[0].price) / item.points[0].price) * 100;
+      const x =
+        xMin === xMax
+          ? leftPadding + innerWidth / 2
+          : leftPadding + ((point.timestampMs - xMin) / timeSpan) * innerWidth;
+      const percent =
+        item.points[0].price === 0
+          ? 0
+          : ((point.price - item.points[0].price) / item.points[0].price) * 100;
       const y = topPadding + (1 - (percent - yMin) / valueSpan) * innerHeight;
 
       return {
@@ -203,7 +211,10 @@ export const buildCombinedStocksChartModel = (
     { label: formatLabel(xMin, rangeLabel), x: leftPadding },
     { label: formatLabel(xMin + timeSpan / 2, rangeLabel), x: leftPadding + innerWidth / 2 },
     { label: formatLabel(xMax, rangeLabel), x: leftPadding + innerWidth },
-  ].filter((item, index, all) => item.label && all.findIndex((candidate) => candidate.label === item.label) === index);
+  ].filter(
+    (item, index, all) =>
+      item.label && all.findIndex((candidate) => candidate.label === item.label) === index,
+  );
 
   const yLabels = [
     { label: `${yMax.toFixed(1)}%`, y: topPadding },
@@ -226,7 +237,10 @@ export const buildCombinedStocksChartModel = (
   };
 };
 
-export default function CombinedStocksChart({ rangeLabel = '1D', series }: CombinedStocksChartProps) {
+export default function CombinedStocksChart({
+  rangeLabel = '1D',
+  series,
+}: CombinedStocksChartProps) {
   const [containerWidth, setContainerWidth] = useState(320);
   const [remoteSeries, setRemoteSeries] = useState<CombinedStockSeries[] | null>(null);
   const [isLoading, setIsLoading] = useState(!series);
@@ -272,7 +286,9 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
 
         const historyResults = await Promise.allSettled(
           symbols.map(async (symbol) => {
-            const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_HISTORY(symbol, rangeLabel)}`);
+            const response = await fetch(
+              `${API_CONFIG.BASE_URL}${API_ENDPOINTS.STOCK_HISTORY(symbol, rangeLabel)}`,
+            );
             if (!response.ok) {
               throw new Error(`Failed to load history for ${symbol}`);
             }
@@ -282,11 +298,12 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
             return {
               symbol,
               name: snapshot?.name ?? symbol,
-              points: Array.isArray(points) && points.length > 0
-                ? points
-                : snapshot?.price && snapshot.lastUpdated
-                  ? [{ timestamp: snapshot.lastUpdated, price: snapshot.price }]
-                  : [],
+              points:
+                Array.isArray(points) && points.length > 0
+                  ? points
+                  : snapshot?.price && snapshot.lastUpdated
+                    ? [{ timestamp: snapshot.lastUpdated, price: snapshot.price }]
+                    : [],
             } satisfies CombinedStockSeries;
           }),
         );
@@ -296,7 +313,10 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
         }
 
         const resolved = historyResults
-          .filter((result): result is PromiseFulfilledResult<CombinedStockSeries> => result.status === 'fulfilled')
+          .filter(
+            (result): result is PromiseFulfilledResult<CombinedStockSeries> =>
+              result.status === 'fulfilled',
+          )
           .map((result) => result.value)
           .filter((item) => item.points.length > 0);
 
@@ -307,7 +327,9 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
         setRemoteSeries(resolved);
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : 'Failed to load combined stock chart.');
+          setError(
+            loadError instanceof Error ? loadError.message : 'Failed to load combined stock chart.',
+          );
           setRemoteSeries(null);
         }
       } finally {
@@ -325,7 +347,13 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
   }, [rangeLabel, series]);
 
   const model = useMemo(
-    () => buildCombinedStocksChartModel(remoteSeries ?? series ?? [], rangeLabel, Math.max(260, containerWidth), 220),
+    () =>
+      buildCombinedStocksChartModel(
+        remoteSeries ?? series ?? [],
+        rangeLabel,
+        Math.max(260, containerWidth),
+        220,
+      ),
     [containerWidth, rangeLabel, remoteSeries, series],
   );
 
@@ -348,12 +376,15 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
   if (!model || model.series.length === 0) {
     return (
       <View className="rounded-lg border border-border bg-background-secondary p-4">
-        <Text className="text-sm text-text-secondary">Combined chart will appear once stock history is available.</Text>
+        <Text className="text-sm text-text-secondary">
+          Combined chart will appear once stock history is available.
+        </Text>
       </View>
     );
   }
 
-  const averageChange = model.series.reduce((total, item) => total + item.latestPercent, 0) / model.series.length;
+  const averageChange =
+    model.series.reduce((total, item) => total + item.latestPercent, 0) / model.series.length;
 
   return (
     <View
@@ -371,12 +402,15 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
           <Text className="text-lg font-bold text-text">Relative performance</Text>
         </View>
         <Text style={{ color: averageChange >= 0 ? '#10B981' : '#EF4444' }}>
-          {averageChange >= 0 ? '+' : ''}{averageChange.toFixed(2)}%
+          {averageChange >= 0 ? '+' : ''}
+          {averageChange.toFixed(2)}%
         </Text>
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'stretch' }}>
-        <View style={{ width: model.leftPadding, paddingRight: 6, justifyContent: 'space-between' }}>
+        <View
+          style={{ width: model.leftPadding, paddingRight: 6, justifyContent: 'space-between' }}
+        >
           {model.yLabels.map((item) => (
             <Text
               key={`${item.label}-${item.y}`}
@@ -432,9 +466,20 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
             </Svg>
           </View>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 1, paddingRight: 1 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              paddingLeft: 1,
+              paddingRight: 1,
+            }}
+          >
             {model.xLabels.map((item) => (
-              <Text key={`${item.label}-${item.x}`} style={{ fontSize: 8, color: '#6B7280' }} numberOfLines={1}>
+              <Text
+                key={`${item.label}-${item.x}`}
+                style={{ fontSize: 8, color: '#6B7280' }}
+                numberOfLines={1}
+              >
                 {item.label}
               </Text>
             ))}
@@ -461,7 +506,8 @@ export default function CombinedStocksChart({ rangeLabel = '1D', series }: Combi
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: item.color }} />
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#1F2937' }}>{item.symbol}</Text>
             <Text style={{ fontSize: 12, color: item.latestPercent >= 0 ? '#10B981' : '#EF4444' }}>
-              {item.latestPercent >= 0 ? '+' : ''}{item.latestPercent.toFixed(2)}%
+              {item.latestPercent >= 0 ? '+' : ''}
+              {item.latestPercent.toFixed(2)}%
             </Text>
           </View>
         ))}
