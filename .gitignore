@@ -23,6 +23,8 @@ tsconfig.tsbuildinfo
 .env.*.local
 apps/mobile/google-services.json
 apps/mobile/GoogleService-Info.plist
+# Mobile env file
+/apps/mobile/.env
 
 # IDE and OS
 .DS_Store
