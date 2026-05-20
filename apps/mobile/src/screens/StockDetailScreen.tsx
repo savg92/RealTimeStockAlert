@@ -434,7 +434,12 @@ export default function StockDetailScreen({ route, navigation }: StockDetailScre
         {/* Quick actions: Set alert, Add to watchlist */}
         <View style={{ marginTop: 10, flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('Alerts', { symbol })}
+            onPress={() => {
+              navigation.navigate('HomeTabs', {
+                screen: 'Alerts',
+                params: { symbol },
+              } as any);
+            }}
             style={{
               flex: 1,
               backgroundColor: '#007bff',
@@ -452,10 +457,14 @@ export default function StockDetailScreen({ route, navigation }: StockDetailScre
                 if (typeof addToWatchlist === 'function') {
                   addToWatchlist(symbol);
                 } else {
-                  navigation.navigate('Watchlist');
+                  navigation.navigate('HomeTabs', {
+                    screen: 'Watchlist',
+                  } as any);
                 }
               } catch {
-                navigation.navigate('Watchlist');
+                navigation.navigate('HomeTabs', {
+                  screen: 'Watchlist',
+                } as any);
               }
             }}
             style={{
